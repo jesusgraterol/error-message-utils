@@ -75,6 +75,8 @@ export {
   CODE_WRAPPER,
   DEFAULT_MESSAGE,
   DEFAULT_CODE,
+
+  // helpers
   wrapCode,
   unwrapCode,
 };

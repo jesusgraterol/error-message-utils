@@ -1,5 +1,5 @@
 import { DEFAULT_MESSAGE } from './message.utils.js';
-import { extractMessage, encodeError } from './message.js';
+import { extractMessage, encodeError, decodeError } from './message.js';
 
 
 
@@ -105,5 +105,57 @@ describe('encodeError', () => {
     expect(encodeError(new Error('This is an error', {
       cause: new Error('This is the cause!'),
     }), 'INVALID_INPUT')).toBe('This is an error; [CAUSE]: This is the cause!{(INVALID_INPUT)}');
+  });
+});
+
+
+
+
+
+describe('decodeError', () => {
+  beforeAll(() => { });
+
+  afterAll(() => { });
+
+  beforeEach(() => { });
+
+  afterEach(() => { });
+
+  test('can decode a basic error', () => {
+    expect(decodeError(encodeError('There was an error.', 100))).toStrictEqual({
+      message: 'There was an error.',
+      code: 100,
+    });
+    expect(decodeError(encodeError(new Error('There was a nasty error.'), 'DB_ERROR'))).toStrictEqual({
+      message: 'There was a nasty error.',
+      code: 'DB_ERROR',
+    });
+  });
+
+  test('can decode an error instance with cause', () => {
+    const error = new Error('Top level error.', {
+      cause: new Error('First nested cause.', {
+        cause: new Error('Second nested cause.'),
+      }),
+    });
+    expect(decodeError(encodeError(error, 100))).toStrictEqual({
+      message: 'Top level error.; [CAUSE]: First nested cause.; [CAUSE]: Second nested cause.',
+      code: 100,
+    });
+    expect(decodeError(encodeError(error, 'UNKNOWN_AUTH_ERROR'))).toStrictEqual({
+      message: 'Top level error.; [CAUSE]: First nested cause.; [CAUSE]: Second nested cause.',
+      code: 'UNKNOWN_AUTH_ERROR',
+    });
+  });
+
+  test('returns -1 as the code if it is not an encoded error message', () => {
+    expect(decodeError('There was an error.')).toStrictEqual({
+      message: 'There was an error.',
+      code: -1,
+    });
+    expect(decodeError('There was an error{(100)}.')).toStrictEqual({
+      message: 'There was an error{(100)}.',
+      code: -1,
+    });
   });
 });
