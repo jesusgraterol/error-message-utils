@@ -49,4 +49,23 @@ describe('extractMessage', () => {
     expect(extractMessage(new TypeError('This is a type error!', { cause }))).toBe('This is a type error!; [CAUSE]: I AM THE CAUSE!');
     expect(extractMessage(new Error('This is an error!', { cause: cause2 }))).toBe('This is an error!; [CAUSE]: I AM THE OTHER CAUSE!');
   });
+
+  test('returns a stringified version of the error if it cannot extract the message from an object', () => {
+    expect(extractMessage(['some', 'weird', 'error'])).toBe(JSON.stringify(['some', 'weird', 'error']));
+    expect(extractMessage({ omg: 'no error keys!', foo: 'bar' })).toBe(JSON.stringify({ omg: 'no error keys!', foo: 'bar' }));
+  });
+
+  test('can extract a message from within an object', () => {
+    expect(extractMessage({ message: 'Ops! something went wrong', msg: 'did it?' })).toBe('Ops! something went wrong');
+    expect(extractMessage({ msg: 'The msg key is used by some APIs' })).toBe('The msg key is used by some APIs');
+    expect(extractMessage({ error: 'The error key is used by some APIs' })).toBe('The error key is used by some APIs');
+    expect(extractMessage({ err: 'The err key is used by some APIs' })).toBe('The err key is used by some APIs');
+    expect(extractMessage({ errors: 'The errors key is used by some APIs' })).toBe('The errors key is used by some APIs');
+    expect(extractMessage({ errs: 'The errs key is used by some APIs' })).toBe('The errs key is used by some APIs');
+  });
+
+  test('can extract a message when is deeply nested within an object', () => {
+    expect(extractMessage({ error: { err: { error: 'Oh my god! So nested :)' } } })).toBe('Oh my god! So nested :)');
+    expect(extractMessage({ message: { err: { message: 'Oh my god! So so nested :)' } } })).toBe('Oh my god! So so nested :)');
+  });
 });
