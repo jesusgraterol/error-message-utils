@@ -71,7 +71,7 @@ describe('extractMessage', () => {
 
   test('can extract a message when is deeply nested within an object', () => {
     expect(extractMessage({ error: { err: { error: 'Oh my god! So nested :)' } } })).toBe('Oh my god! So nested :)');
-    expect(extractMessage({ message: { err: { message: 'Oh my god! So so nested :)' } } })).toBe('Oh my god! So so nested :)');
+    expect(extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } })).toBe('This error message is nested deeply!');
   });
 });
 
