@@ -1,8 +1,5 @@
 import { DEFAULT_MESSAGE } from './message.utils.js';
-import {
-  extractMessage,
-  encodeError,
-} from './message.js';
+import { extractMessage, encodeError } from './message.js';
 
 
 

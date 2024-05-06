@@ -1,5 +1,9 @@
 import { IErrorCode, IDecodedError } from './types.js';
-import { DEFAULT_MESSAGE, wrapCode } from './message.utils.js';
+import {
+  DEFAULT_MESSAGE,
+  wrapCode,
+  unwrapCode,
+} from './message.utils.js';
 
 /* ************************************************************************************************
  *                                         IMPLEMENTATION                                         *
@@ -17,13 +21,12 @@ const extractMessage = (error: any): string => {
     return error;
   }
 
-  // if it is an instance of an error, check if there is a cause and handle it recursively
+  // if it is an instance of an error, check if there is a cause and handle it recursively.
+  // Otherwise, just return the message
   if (error instanceof Error && error.message) {
     if (error.cause) {
       return `${error.message}; [CAUSE]: ${extractMessage(error.cause)}`;
     }
-
-    // otherwise, just return the message
     return error.message;
   }
 
@@ -51,6 +54,7 @@ const extractMessage = (error: any): string => {
     try {
       return JSON.stringify(error);
     } catch (e) {
+      console.error('Error during extractMessage:');
       console.error('Original Error: ', error);
       console.error('JSON.stringify Error:', e);
     }
@@ -60,18 +64,27 @@ const extractMessage = (error: any): string => {
   return DEFAULT_MESSAGE;
 };
 
-
 /**
- * Encodes an error.
+ * Given an error in any format, it extracts the message and inserts the code at the end.
  * @param error
  * @param code
  * @returns string
  */
 const encodeError = (error: any, code: IErrorCode): string => `${extractMessage(error)}${wrapCode(code)}`;
 
-
-const decodeError = (message: string): IDecodedError => {
-  return { message: '', code: '' }
+/**
+ * Given an error, it will extract the encoded message and attempt to decode it. If successful,
+ * it separates the error message from the code so it can be shown directly to the user.
+ * @param error
+ * @returns IDecodedError
+ */
+const decodeError = (error: any): IDecodedError => {
+  const encodedErrorMessage = extractMessage(error);
+  const { code, startsAt } = unwrapCode(encodedErrorMessage);
+  return {
+    message: startsAt > 0 ? encodedErrorMessage.slice(0, startsAt) : encodedErrorMessage,
+    code,
+  };
 };
 
 

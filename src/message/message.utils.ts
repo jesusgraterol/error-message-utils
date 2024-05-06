@@ -1,7 +1,4 @@
-import {
-  IErrorCodeWrapper,
-  IErrorCode,
-} from './types.js';
+import { IErrorCodeWrapper, IErrorCode, IUnwrappedErrorCode } from './types.js';
 
 /* ************************************************************************************************
  *                                           CONSTANTS                                            *
@@ -34,6 +31,45 @@ const DEFAULT_CODE: IErrorCode = -1;
  */
 const wrapCode = (code: IErrorCode): string => `${CODE_WRAPPER.prefix}${code ?? DEFAULT_CODE}${CODE_WRAPPER.suffix}`;
 
+/**
+ * Checks if a given error is an encoded message.
+ * @param message
+ * @returns boolean
+ */
+const __isEncodedError = (message: string): boolean => {
+  let regex: string = `${CODE_WRAPPER.prefix}.+${CODE_WRAPPER.suffix}$`;
+  // eslint-disable-next-line no-useless-escape
+  regex = regex.replace('(', '\\(');
+  // eslint-disable-next-line no-useless-escape
+  regex = regex.replace(')', '\\)');
+  return new RegExp(regex).test(message);
+};
+
+/**
+ * Verifies if a given string is numeric.
+ * @param code
+ * @returns boolean
+ */
+const __isNumeric = (code: string) => !Number.isNaN(Number.parseFloat(code));
+
+/**
+ * Verifies if a message is an encoded error and if so, attempts to extract the code.
+ * If unsuccessful, both code and startsAt values will be -1.
+ * @param message
+ * @returns IUnwrappedErrorCode
+ */
+const unwrapCode = (message: string): IUnwrappedErrorCode => {
+  if (__isEncodedError(message)) {
+    const startsAt = message.indexOf(CODE_WRAPPER.prefix);
+    const code = message.substring(startsAt + 2, message.lastIndexOf(CODE_WRAPPER.suffix));
+    return {
+      code: __isNumeric(code) ? Number(code) : code,
+      startsAt,
+    };
+  }
+  return { code: -1, startsAt: -1 };
+};
+
 
 
 
@@ -47,4 +83,5 @@ export {
   DEFAULT_MESSAGE,
   DEFAULT_CODE,
   wrapCode,
+  unwrapCode,
 };
