@@ -1,7 +1,4 @@
-import {
-  IErrorCode,
-  IDecodedError,
-} from './types.js';
+import { IErrorCode, IDecodedError } from './types.js';
 import { DEFAULT_MESSAGE, wrapCode } from './message.utils.js';
 
 /* ************************************************************************************************
@@ -59,7 +56,7 @@ const extractMessage = (error: any): string => {
     }
   }
 
-  // if none could be determined, return the default
+  // if none could be extracted, return the default
   return DEFAULT_MESSAGE;
 };
 

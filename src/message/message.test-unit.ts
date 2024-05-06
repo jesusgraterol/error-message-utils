@@ -50,6 +50,14 @@ describe('extractMessage', () => {
     expect(extractMessage(new Error('This is an error!', { cause: cause2 }))).toBe('This is an error!; [CAUSE]: I AM THE OTHER CAUSE!');
   });
 
+  test('can extract a message from an error instance with deeply nested causes', () => {
+    expect(extractMessage(new Error('Top level error', {
+      cause: new Error('First nested cause', {
+        cause: new Error('Second nested cause'),
+      }),
+    }))).toBe('Top level error; [CAUSE]: First nested cause; [CAUSE]: Second nested cause');
+  });
+
   test('returns a stringified version of the error if it cannot extract the message from an object', () => {
     expect(extractMessage(['some', 'weird', 'error'])).toBe(JSON.stringify(['some', 'weird', 'error']));
     expect(extractMessage({ omg: 'no error keys!', foo: 'bar' })).toBe(JSON.stringify({ omg: 'no error keys!', foo: 'bar' }));
@@ -67,5 +75,38 @@ describe('extractMessage', () => {
   test('can extract a message when is deeply nested within an object', () => {
     expect(extractMessage({ error: { err: { error: 'Oh my god! So nested :)' } } })).toBe('Oh my god! So nested :)');
     expect(extractMessage({ message: { err: { message: 'Oh my god! So so nested :)' } } })).toBe('Oh my god! So so nested :)');
+  });
+});
+
+
+
+
+
+describe('encodeError', () => {
+  beforeAll(() => { });
+
+  afterAll(() => { });
+
+  beforeEach(() => { });
+
+  afterEach(() => { });
+
+  test('can encode a string error', () => {
+    expect(encodeError('This is an error', 1)).toBe('This is an error{(1)}');
+    expect(encodeError('This is an error', 'INVALID_INPUT')).toBe('This is an error{(INVALID_INPUT)}');
+  });
+
+  test('can encode an error instance', () => {
+    expect(encodeError(new Error('This is an error'), 1)).toBe('This is an error{(1)}');
+    expect(encodeError(new ReferenceError('This is an error'), 'INVALID_INPUT')).toBe('This is an error{(INVALID_INPUT)}');
+  });
+
+  test('can encode an error instance with cause', () => {
+    expect(encodeError(new Error('This is an error', {
+      cause: new Error('This is the cause!'),
+    }), 1)).toBe('This is an error; [CAUSE]: This is the cause!{(1)}');
+    expect(encodeError(new Error('This is an error', {
+      cause: new Error('This is the cause!'),
+    }), 'INVALID_INPUT')).toBe('This is an error; [CAUSE]: This is the cause!{(INVALID_INPUT)}');
   });
 });
