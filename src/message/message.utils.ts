@@ -32,9 +32,7 @@ const DEFAULT_CODE: IErrorCode = -1;
  * @param code
  * @returns string
  */
-const wrapCode = (code: IErrorCode): string => `${CODE_WRAPPER.prefix}${code ?? DEFAULT_CODE}})${CODE_WRAPPER.suffix}`;
-
-
+const wrapCode = (code: IErrorCode): string => `${CODE_WRAPPER.prefix}${code ?? DEFAULT_CODE}${CODE_WRAPPER.suffix}`;
 
 
 

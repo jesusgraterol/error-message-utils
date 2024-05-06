@@ -21,7 +21,7 @@ const extractMessage = (error: any): string => {
   }
 
   // if it is an instance of an error, check if there is a cause and handle it recursively
-  if (error instanceof Error) {
+  if (error instanceof Error && error.message) {
     if (error.cause) {
       return `${error.message}; [CAUSE]: ${extractMessage(error.cause)}`;
     }
@@ -30,7 +30,7 @@ const extractMessage = (error: any): string => {
     return error.message;
   }
 
-  // if it is an object, check common property names and feed them back into the function if there 
+  // if it is an object, check common property names and feed them back into the function if there
   // is a match. Otherwise, attempt to stringify the entire object.
   if (error && typeof error === 'object') {
     if (error.message) {
@@ -45,10 +45,16 @@ const extractMessage = (error: any): string => {
     if (error.err) {
       return extractMessage(error.err);
     }
+    if (error.errors) {
+      return extractMessage(error.errors);
+    }
+    if (error.errs) {
+      return extractMessage(error.errs);
+    }
     try {
       return JSON.stringify(error);
     } catch (e) {
-      console.log('Original Error: ', error);
+      console.error('Original Error: ', error);
       console.error('JSON.stringify Error:', e);
     }
   }
@@ -79,7 +85,7 @@ const decodeError = (message: string): IDecodedError => {
  *                                        MODULE EXPORTS                                          *
  ************************************************************************************************ */
 export {
+  extractMessage,
   encodeError,
   decodeError,
-  extractMessage,
 };
