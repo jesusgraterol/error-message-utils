@@ -36,14 +36,7 @@ const wrapCode = (code: IErrorCode): string => `${CODE_WRAPPER.prefix}${code ?? 
  * @param message
  * @returns boolean
  */
-const __isEncodedError = (message: string): boolean => {
-  let regex: string = `${CODE_WRAPPER.prefix}.+${CODE_WRAPPER.suffix}$`;
-  // eslint-disable-next-line no-useless-escape
-  regex = regex.replace('(', '\\(');
-  // eslint-disable-next-line no-useless-escape
-  regex = regex.replace(')', '\\)');
-  return new RegExp(regex).test(message);
-};
+const __isEncodedError = (message: string): boolean => new RegExp(`${CODE_WRAPPER.prefix}.+${CODE_WRAPPER.suffix}$`).test(message);
 
 /**
  * Verifies if a given string is numeric.
