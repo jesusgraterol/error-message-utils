@@ -32,7 +32,7 @@ if (emailExists()) {
     'The provided email is already in use.', 
     'EMAIL_EXISTS'
   ));
-  // The provided email is already in use.{(EMAIL_EXISTS)}
+  // 'The provided email is already in use.{(EMAIL_EXISTS)}'
 }
 ```
 
@@ -43,7 +43,7 @@ import { decodeError } from 'error-message-utils';
 decodeError('The provided email is already in use.{(EMAIL_EXISTS)}');
 // {
 //   message: 'The provided email is already in use.',
-//   code: EMAIL_EXISTS
+//   code: 'EMAIL_EXISTS'
 // }
 ```
 
@@ -142,5 +142,3 @@ Publish to `npm`:
 ```bash
 $ npm publish
 ```
-
-
