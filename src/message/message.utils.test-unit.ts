@@ -75,4 +75,19 @@ describe('unwrapCode', () => {
       startsAt: -1,
     });
   });
+
+  test('can unwrap the code even if there appears to be another error code encoded in the message', () => {
+    expect(unwrapCode(`Some random${wrapCode(1)} error${wrapCode('INVALID_INPUT')}`)).toStrictEqual({
+      code: 'INVALID_INPUT',
+      startsAt: 22,
+    });
+    expect(unwrapCode(`Some random${CODE_WRAPPER.prefix} error${wrapCode('INVALID_INPUT')}`)).toStrictEqual({
+      code: 'INVALID_INPUT',
+      startsAt: 19,
+    });
+    expect(unwrapCode(`Some random${CODE_WRAPPER.suffix} error${wrapCode('INVALID_INPUT')}`)).toStrictEqual({
+      code: 'INVALID_INPUT',
+      startsAt: 19,
+    });
+  });
 });

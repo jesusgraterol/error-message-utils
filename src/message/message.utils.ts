@@ -53,7 +53,7 @@ const __isNumeric = (code: string) => !Number.isNaN(Number.parseFloat(code));
  */
 const unwrapCode = (message: string): IUnwrappedErrorCode => {
   if (__isEncodedError(message)) {
-    const startsAt = message.indexOf(CODE_WRAPPER.prefix);
+    const startsAt = message.lastIndexOf(CODE_WRAPPER.prefix);
     const code = message.substring(startsAt + 2, message.lastIndexOf(CODE_WRAPPER.suffix));
     return {
       code: __isNumeric(code) ? Number(code) : code,

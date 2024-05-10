@@ -1,4 +1,4 @@
-import { DEFAULT_MESSAGE } from './message.utils.js';
+import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from './message.utils.js';
 import { extractMessage, encodeError, decodeError } from './message.js';
 
 
@@ -156,6 +156,33 @@ describe('decodeError', () => {
     expect(decodeError('There was an error{(100)}.')).toStrictEqual({
       message: 'There was an error{(100)}.',
       code: -1,
+    });
+  });
+
+  test('can decode the correct error code even if there appear to be multiple', () => {
+    expect(decodeError(
+      encodeError(`This is an error within an ${encodeError('This is a nested error', 'INVALID')}`, 'CORRECT_ERROR'),
+    )).toStrictEqual({
+      message: `This is an error within an This is a nested error${wrapCode('INVALID')}`,
+      code: 'CORRECT_ERROR',
+    });
+    expect(decodeError(
+      encodeError(`This is an error within a nested ${CODE_WRAPPER.prefix}`, 'CORRECT_ERROR'),
+    )).toStrictEqual({
+      message: `This is an error within a nested ${CODE_WRAPPER.prefix}`,
+      code: 'CORRECT_ERROR',
+    });
+    expect(decodeError(
+      encodeError(`This is an error within a nested ${CODE_WRAPPER.suffix}`, 'CORRECT_ERROR'),
+    )).toStrictEqual({
+      message: `This is an error within a nested ${CODE_WRAPPER.suffix}`,
+      code: 'CORRECT_ERROR',
+    });
+    expect(decodeError(
+      encodeError(`This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`, 123456),
+    )).toStrictEqual({
+      message: `This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`,
+      code: 123456,
     });
   });
 });
