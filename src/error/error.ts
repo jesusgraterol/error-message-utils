@@ -1,9 +1,5 @@
 import { IErrorCode, IDecodedError } from '../shared/index.js';
-import {
-  DEFAULT_MESSAGE,
-  wrapCode,
-  unwrapCode,
-} from './message.utils.js';
+import { DEFAULT_MESSAGE, wrapCode, unwrapCode } from '../utils/utils.js';
 
 /* ************************************************************************************************
  *                                         IMPLEMENTATION                                         *

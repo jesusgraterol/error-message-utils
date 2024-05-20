@@ -75,7 +75,7 @@ extractMessage({
 
 ## Built With
 
-- JavaScript / TypeScript
+- TypeScript
 
 
 

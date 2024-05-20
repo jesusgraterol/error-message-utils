@@ -1,7 +1,9 @@
-import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from './message.utils.js';
-import { extractMessage, encodeError, decodeError } from './message.js';
+import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from '../utils/index.js';
+import { extractMessage, encodeError, decodeError } from './error.js';
 
-
+/* ************************************************************************************************
+ *                                             TESTS                                              *
+ ************************************************************************************************ */
 
 describe('extractMessage', () => {
   beforeAll(() => { });

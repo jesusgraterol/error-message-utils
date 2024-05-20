@@ -1,2 +1,2 @@
 export * from './shared/types.js';
-export * from './message/index.js';
+export * from './error/index.js';
