@@ -1,12 +1,12 @@
 {
   "name": "error-message-utils",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "The error-message-utils package simplifies error management in your web applications and RESTful APIs. It ensures consistent and scalable handling of error messages, saving you time and effort. Moreover, it gives you the ability to assign custom error codes so all possible cases can be handled accordingly.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "start": "ts-lib-builder --tsconfigPath=tsconfig.build.json",
+    "start": "ts-lib-builder --tsconfig=tsconfig.build.json",
     "test": "echo \"Error: tests are executed with  npm run test:(integration|unit)\" && exit 1",
     "test:integration": "jest --config=jest.test-integration.config.json --no-cache",
     "test:unit": "jest --config=jest.test-unit.config.json --no-cache"
@@ -44,7 +44,7 @@
     "eslint-config-airbnb-typescript": "^18.0.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
-    "ts-lib-builder": "^1.0.2",
+    "ts-lib-builder": "^1.0.3",
     "typescript": "^5.4.5"
   }
 }
