@@ -1,4 +1,4 @@
-import { IErrorCode, IDecodedError } from './types.js';
+import { IErrorCode, IDecodedError } from '../shared/index.js';
 import {
   DEFAULT_MESSAGE,
   wrapCode,

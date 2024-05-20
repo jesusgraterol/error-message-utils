@@ -1,4 +1,8 @@
-import { CODE_WRAPPER, unwrapCode, wrapCode } from './message.utils.js';
+import { CODE_WRAPPER, unwrapCode, wrapCode } from './utils.js';
+
+/* ************************************************************************************************
+ *                                             TESTS                                              *
+ ************************************************************************************************ */
 
 describe('wrapCode', () => {
   beforeAll(() => { });
@@ -27,6 +31,8 @@ describe('wrapCode', () => {
     expect(wrapCode(null)).toBe(`${CODE_WRAPPER.prefix}-1${CODE_WRAPPER.suffix}`);
   });
 });
+
+
 
 
 

@@ -1,4 +1,4 @@
-import { IErrorCodeWrapper, IErrorCode, IUnwrappedErrorCode } from './types.js';
+import { IErrorCodeWrapper, IErrorCode, IUnwrappedErrorCode } from '../shared/index.js';
 
 /* ************************************************************************************************
  *                                           CONSTANTS                                            *
