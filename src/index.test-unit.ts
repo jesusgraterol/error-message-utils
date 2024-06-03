@@ -1,5 +1,5 @@
-import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from '../utils/index.js';
-import { extractMessage, encodeError, decodeError } from './error.js';
+import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from './utils/utils.js';
+import { extractMessage, encodeError, decodeError } from './index.js';
 
 /* ************************************************************************************************
  *                                             TESTS                                              *
