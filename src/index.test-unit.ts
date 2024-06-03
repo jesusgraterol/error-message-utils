@@ -1,5 +1,10 @@
 import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from './utils/utils.js';
-import { extractMessage, encodeError, decodeError } from './index.js';
+import {
+  extractMessage,
+  encodeError,
+  decodeError,
+  isEncodedError,
+} from './index.js';
 
 /* ************************************************************************************************
  *                                             TESTS                                              *
@@ -186,5 +191,30 @@ describe('decodeError', () => {
       message: `This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`,
       code: 123456,
     });
+  });
+});
+
+
+
+
+
+describe('isEncodedError', () => {
+  beforeAll(() => { });
+
+  afterAll(() => { });
+
+  beforeEach(() => { });
+
+  afterEach(() => { });
+
+  test('can identify an encoded error from a string', () => {
+    expect(isEncodedError(encodeError('There was an error.', 100))).toBe(true);
+    expect(isEncodedError('There was an error.')).toBe(false);
+    expect(isEncodedError(encodeError('There was an error.', -1))).toBe(false);
+  });
+
+  test('can identify an encoded error from an error instance', () => {
+    expect(isEncodedError(new Error(encodeError('There was an error.', 100)))).toBe(true);
+    expect(isEncodedError(new Error('There was an error.'))).toBe(false);
   });
 });

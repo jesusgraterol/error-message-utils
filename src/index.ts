@@ -1,5 +1,10 @@
 import { IErrorCode, IDecodedError } from './shared/types.js';
-import { DEFAULT_MESSAGE, wrapCode, unwrapCode } from './utils/utils.js';
+import {
+  DEFAULT_MESSAGE,
+  DEFAULT_CODE,
+  wrapCode,
+  unwrapCode,
+} from './utils/utils.js';
 
 /* ************************************************************************************************
  *                                         IMPLEMENTATION                                         *
@@ -83,6 +88,13 @@ const decodeError = (error: any): IDecodedError => {
   };
 };
 
+/**
+ * Determines if a given error (in any format) is an error encoded by this package.
+ * @param error
+ * @returns boolean
+ */
+const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFAULT_CODE;
+
 
 
 
@@ -99,4 +111,5 @@ export {
   extractMessage,
   encodeError,
   decodeError,
+  isEncodedError,
 };

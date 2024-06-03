@@ -24,6 +24,7 @@ $ npm install -S error-message-utils
 ## Usage
 
 Encoding an error:
+
 ```typescript
 import { encodeError } from 'error-message-utils';
 
@@ -36,7 +37,11 @@ if (emailExists()) {
 }
 ```
 
+
+<br/>
+
 Decoding an error:
+
 ```typescript
 import { decodeError } from 'error-message-utils';
 
@@ -47,7 +52,11 @@ decodeError('The provided email is already in use.{(EMAIL_EXISTS)}');
 // }
 ```
 
+
+<br/>
+
 Error messages can be extracted recursively from complex structures, including nested `cause` data properties from `Error` instances:
+
 ```typescript
 import { extractMessage } from 'error-message-utils';
 
@@ -69,6 +78,26 @@ extractMessage({
 // 'This error message is nested deeply!'
 ```
 
+
+<br/>
+
+Identifying encoded errors:
+
+```typescript
+import { isEncodedError, encodeError } from 'error-message-utils';
+
+isEncodedError('Some random unencoded error');
+// false
+
+isEncodedError(new Error('Some random unencoded error'));
+// false
+
+isEncodedError(encodeError('Some unknown error.', 'NASTY_ERROR'));
+// true
+
+isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
+// true
+```
 
 
 <br/>
