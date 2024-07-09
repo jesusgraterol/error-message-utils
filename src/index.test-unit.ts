@@ -11,14 +11,6 @@ import {
  ************************************************************************************************ */
 
 describe('extractMessage', () => {
-  beforeAll(() => { });
-
-  afterAll(() => { });
-
-  beforeEach(() => { });
-
-  afterEach(() => { });
-
   test('returns the default error msg if an invalid value is provided', () => {
     // @ts-ignore
     expect(extractMessage()).toBe(DEFAULT_MESSAGE);
@@ -87,14 +79,6 @@ describe('extractMessage', () => {
 
 
 describe('encodeError', () => {
-  beforeAll(() => { });
-
-  afterAll(() => { });
-
-  beforeEach(() => { });
-
-  afterEach(() => { });
-
   test('can encode a string error', () => {
     expect(encodeError('This is an error', 1)).toBe('This is an error{(1)}');
     expect(encodeError('This is an error', 'INVALID_INPUT')).toBe('This is an error{(INVALID_INPUT)}');
@@ -120,14 +104,6 @@ describe('encodeError', () => {
 
 
 describe('decodeError', () => {
-  beforeAll(() => { });
-
-  afterAll(() => { });
-
-  beforeEach(() => { });
-
-  afterEach(() => { });
-
   test('can decode a basic error', () => {
     expect(decodeError(encodeError('There was an error.', 100))).toStrictEqual({
       message: 'There was an error.',
@@ -199,14 +175,6 @@ describe('decodeError', () => {
 
 
 describe('isEncodedError', () => {
-  beforeAll(() => { });
-
-  afterAll(() => { });
-
-  beforeEach(() => { });
-
-  afterEach(() => { });
-
   test('can identify an encoded error from a string', () => {
     expect(isEncodedError(encodeError('There was an error.', 100))).toBe(true);
     expect(isEncodedError('There was an error.')).toBe(false);

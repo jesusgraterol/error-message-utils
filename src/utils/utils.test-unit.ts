@@ -5,14 +5,6 @@ import { CODE_WRAPPER, unwrapCode, wrapCode } from './utils.js';
  ************************************************************************************************ */
 
 describe('wrapCode', () => {
-  beforeAll(() => { });
-
-  afterAll(() => { });
-
-  beforeEach(() => { });
-
-  afterEach(() => { });
-
   test('can wrap a code in number format', () => {
     expect(wrapCode(0)).toBe(`${CODE_WRAPPER.prefix}0${CODE_WRAPPER.suffix}`);
     expect(wrapCode(123)).toBe(`${CODE_WRAPPER.prefix}123${CODE_WRAPPER.suffix}`);
@@ -37,14 +29,6 @@ describe('wrapCode', () => {
 
 
 describe('unwrapCode', () => {
-  beforeAll(() => { });
-
-  afterAll(() => { });
-
-  beforeEach(() => { });
-
-  afterEach(() => { });
-
   test('can unwrap the code from a basic encoded error message', () => {
     expect(unwrapCode(`Some random error${wrapCode(1)}`)).toStrictEqual({
       code: 1,
