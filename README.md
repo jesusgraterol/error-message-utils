@@ -103,7 +103,7 @@ isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
 ```typescript
 /**
  * Error Code
- * The error's code that is inserted when encoding an error. If none is provided or none can be extracted, it defaults to -1.
+ * The code that is inserted when encoding an error. If none is provided or none can be extracted, it defaults to -1.
  */
 type IErrorCode = string | number;
 
