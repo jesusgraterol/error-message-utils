@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { IErrorCode, IDecodedError } from './shared/types.js';
 import {
   DEFAULT_MESSAGE,
@@ -104,8 +105,8 @@ const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFA
  ************************************************************************************************ */
 export {
   // types
-  IErrorCode,
-  IDecodedError,
+  type IErrorCode,
+  type IDecodedError,
 
   // implementation
   extractMessage,
