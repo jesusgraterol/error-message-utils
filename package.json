@@ -1,6 +1,6 @@
 {
   "name": "error-message-utils",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "The error-message-utils package simplifies error management in your web applications and RESTful APIs. It ensures consistent and scalable handling of error messages, saving you time and effort. Moreover, it gives you the ability to assign custom error codes so all possible cases can be handled accordingly.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -37,14 +37,14 @@
   },
   "homepage": "https://github.com/jesusgraterol/error-message-utils#readme",
   "devDependencies": {
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.14.10",
-    "@typescript-eslint/eslint-plugin": "^7.16.0",
-    "@typescript-eslint/parser": "^7.16.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.17.9",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.0",
-    "ts-lib-builder": "^1.0.3",
-    "typescript": "^5.5.3"
+    "ts-jest": "^29.2.5",
+    "ts-lib-builder": "^1.0.5",
+    "typescript": "^5.7.2"
   }
 }

@@ -12,16 +12,10 @@ The `error-message-utils` package simplifies error management in your web applic
 
 Install the package:
 ```bash
-$ npm install -S error-message-utils
+npm install -S error-message-utils
 ```
 
-
-
-
-
-</br>
-
-## Usage
+### Examples
 
 Encoding an error:
 
@@ -100,6 +94,31 @@ isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
 ```
 
 
+
+
+<br/>
+
+## Types
+
+```typescript
+/**
+ * Error Code
+ * The error's code that is inserted when encoding an error. If none is provided or none can be extracted, it defaults to -1.
+ */
+type IErrorCode = string | number;
+
+/**
+ * Decoded Error
+ * The object obtained when an error is decoded. Keep in mind that if the error message or the code cannot be extracted for any reason, the default values will be set instead.
+ */
+type IDecodedError = {
+  message: string,
+  code: IErrorCode,
+};
+```
+
+
+
 <br/>
 
 ## Built With
@@ -114,7 +133,7 @@ isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
 ## Running the Tests
 
 ```bash
-$ npm run test:unit
+npm run test:unit
 ```
 
 
@@ -133,41 +152,21 @@ $ npm run test:unit
 
 <br/>
 
-## Acknowledgments
-
-- ...
-
-
-
-
-
-<br/>
-
-## @TODOS
-
-- [ ] ...
-
-
-
-
-
-<br/>
-
 ## Deployment
 
 Install dependencies:
 ```bash
-$ npm install
+npm install
 ```
 
 
 Build the library:
 ```bash
-$ npm start
+npm start
 ```
 
 
 Publish to `npm`:
 ```bash
-$ npm publish
+npm publish
 ```
