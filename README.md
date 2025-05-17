@@ -94,6 +94,26 @@ isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
 ```
 
 
+<br/>
+
+In some cases, you may want to check whether the extracted error matches the default message provided by this package:
+
+```typescript
+import { isDefaultErrorMessage} from 'error-message-utils';
+
+const DEFAULT_MESSAGE: string = 'The error message could not be extracted, check the logs for more information.';
+
+isDefaultErrorMessage(DEFAULT_MESSAGE);
+// true
+
+isDefaultErrorMessage(`${DEFAULT_MESSAGE} and something else...`);
+// false
+
+isDefaultErrorMessage(`${DEFAULT_MESSAGE} and something else...`, true);
+// true
+```
+
+
 
 
 <br/>
