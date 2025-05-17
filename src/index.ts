@@ -67,6 +67,16 @@ const extractMessage = (error: any): string => {
 };
 
 /**
+ * Verifies if a value matches the default error message used by this package.
+ * @param value
+ * @param fullMatch?
+ * @returns boolean
+ */
+const isDefaultErrorMessage = (value: string, fullMatch: boolean = false): value is string => (
+  fullMatch ? value === DEFAULT_MESSAGE : typeof value === 'string' && value.includes(DEFAULT_MESSAGE)
+);
+
+/**
  * Given an error in any format, it extracts the message and inserts the code at the end.
  * @param error
  * @param code
@@ -110,6 +120,7 @@ export {
 
   // implementation
   extractMessage,
+  isDefaultErrorMessage,
   encodeError,
   decodeError,
   isEncodedError,

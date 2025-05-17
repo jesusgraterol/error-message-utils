@@ -1,6 +1,7 @@
 import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from './utils/utils.js';
 import {
   extractMessage,
+  isDefaultErrorMessage,
   encodeError,
   decodeError,
   isEncodedError,
@@ -71,6 +72,20 @@ describe('extractMessage', () => {
   test('can extract a message when is deeply nested within an object', () => {
     expect(extractMessage({ error: { err: { error: 'Oh my god! So nested :)' } } })).toBe('Oh my god! So nested :)');
     expect(extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } })).toBe('This error message is nested deeply!');
+  });
+});
+
+
+
+
+describe('isDefaultErrorMessage', () => {
+  test('can identify the default error message', () => {
+    expect(isDefaultErrorMessage(DEFAULT_MESSAGE)).toBe(true);
+    expect(isDefaultErrorMessage(DEFAULT_MESSAGE, true)).toBe(true);
+    expect(isDefaultErrorMessage(`${DEFAULT_MESSAGE} and something else...`)).toBe(true);
+    expect(isDefaultErrorMessage(`${DEFAULT_MESSAGE} and something else...`, true)).toBe(false);
+    expect(isDefaultErrorMessage('This is a nasty error!')).toBe(false);
+    expect(isDefaultErrorMessage('This is a nasty error!', true)).toBe(false);
   });
 });
 
