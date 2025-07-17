@@ -1,11 +1,6 @@
 /* eslint-disable no-console */
 import { IErrorCode, IDecodedError } from './shared/types.js';
-import {
-  DEFAULT_MESSAGE,
-  DEFAULT_CODE,
-  wrapCode,
-  unwrapCode,
-} from './utils/utils.js';
+import { DEFAULT_MESSAGE, DEFAULT_CODE, wrapCode, unwrapCode } from './utils/utils.js';
 
 /* ************************************************************************************************
  *                                         IMPLEMENTATION                                         *
@@ -72,9 +67,10 @@ const extractMessage = (error: any): string => {
  * @param fullMatch?
  * @returns boolean
  */
-const isDefaultErrorMessage = (value: string, fullMatch: boolean = false): value is string => (
-  fullMatch ? value === DEFAULT_MESSAGE : typeof value === 'string' && value.includes(DEFAULT_MESSAGE)
-);
+const isDefaultErrorMessage = (value: string, fullMatch: boolean = false): value is string =>
+  fullMatch
+    ? value === DEFAULT_MESSAGE
+    : typeof value === 'string' && value.includes(DEFAULT_MESSAGE);
 
 /**
  * Given an error in any format, it extracts the message and inserts the code at the end.
@@ -82,7 +78,8 @@ const isDefaultErrorMessage = (value: string, fullMatch: boolean = false): value
  * @param code
  * @returns string
  */
-const encodeError = (error: any, code: IErrorCode): string => `${extractMessage(error)}${wrapCode(code)}`;
+const encodeError = (error: any, code: IErrorCode): string =>
+  `${extractMessage(error)}${wrapCode(code)}`;
 
 /**
  * Given an error, it will extract the encoded message and attempt to decode it. If successful,
@@ -105,10 +102,6 @@ const decodeError = (error: any): IDecodedError => {
  * @returns boolean
  */
 const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFAULT_CODE;
-
-
-
-
 
 /* ************************************************************************************************
  *                                        MODULE EXPORTS                                          *

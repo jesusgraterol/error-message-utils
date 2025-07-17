@@ -30,53 +30,94 @@ describe('extractMessage', () => {
 
   test('can extract a message from an error instance', () => {
     expect(extractMessage(new Error('This is a nasty error!'))).toBe('This is a nasty error!');
-    expect(extractMessage(new TypeError('This is a nasty type error!'))).toBe('This is a nasty type error!');
-    expect(extractMessage(new ReferenceError('This is a nasty reference error!'))).toBe('This is a nasty reference error!');
-    expect(extractMessage(new SyntaxError('This is a nasty syntax error!'))).toBe('This is a nasty syntax error!');
-    expect(extractMessage(new RangeError('This is a nasty range error!'))).toBe('This is a nasty range error!');
-    expect(extractMessage(new EvalError('This is a nasty eval error!'))).toBe('This is a nasty eval error!');
-    expect(extractMessage(new URIError('This is a nasty uri error!'))).toBe('This is a nasty uri error!');
-    expect(extractMessage(new AggregateError(['error 1', 'error 2', 'error 3']))).toStrictEqual(JSON.stringify(['error 1', 'error 2', 'error 3']));
+    expect(extractMessage(new TypeError('This is a nasty type error!'))).toBe(
+      'This is a nasty type error!',
+    );
+    expect(extractMessage(new ReferenceError('This is a nasty reference error!'))).toBe(
+      'This is a nasty reference error!',
+    );
+    expect(extractMessage(new SyntaxError('This is a nasty syntax error!'))).toBe(
+      'This is a nasty syntax error!',
+    );
+    expect(extractMessage(new RangeError('This is a nasty range error!'))).toBe(
+      'This is a nasty range error!',
+    );
+    expect(extractMessage(new EvalError('This is a nasty eval error!'))).toBe(
+      'This is a nasty eval error!',
+    );
+    expect(extractMessage(new URIError('This is a nasty uri error!'))).toBe(
+      'This is a nasty uri error!',
+    );
+    expect(extractMessage(new AggregateError(['error 1', 'error 2', 'error 3']))).toStrictEqual(
+      JSON.stringify(['error 1', 'error 2', 'error 3']),
+    );
   });
 
   test('can extract a message from an error instance with cause', () => {
     const cause = new Error('I AM THE CAUSE!');
     const cause2 = new ReferenceError('I AM THE OTHER CAUSE!');
-    expect(extractMessage(new Error('This is a nasty error!', { cause }))).toBe('This is a nasty error!; [CAUSE]: I AM THE CAUSE!');
-    expect(extractMessage(new TypeError('This is a type error!', { cause }))).toBe('This is a type error!; [CAUSE]: I AM THE CAUSE!');
-    expect(extractMessage(new Error('This is an error!', { cause: cause2 }))).toBe('This is an error!; [CAUSE]: I AM THE OTHER CAUSE!');
+    expect(extractMessage(new Error('This is a nasty error!', { cause }))).toBe(
+      'This is a nasty error!; [CAUSE]: I AM THE CAUSE!',
+    );
+    expect(extractMessage(new TypeError('This is a type error!', { cause }))).toBe(
+      'This is a type error!; [CAUSE]: I AM THE CAUSE!',
+    );
+    expect(extractMessage(new Error('This is an error!', { cause: cause2 }))).toBe(
+      'This is an error!; [CAUSE]: I AM THE OTHER CAUSE!',
+    );
   });
 
   test('can extract a message from an error instance with deeply nested causes', () => {
-    expect(extractMessage(new Error('Top level error', {
-      cause: new Error('First nested cause', {
-        cause: new Error('Second nested cause'),
-      }),
-    }))).toBe('Top level error; [CAUSE]: First nested cause; [CAUSE]: Second nested cause');
+    expect(
+      extractMessage(
+        new Error('Top level error', {
+          cause: new Error('First nested cause', {
+            cause: new Error('Second nested cause'),
+          }),
+        }),
+      ),
+    ).toBe('Top level error; [CAUSE]: First nested cause; [CAUSE]: Second nested cause');
   });
 
   test('returns a stringified version of the error if it cannot extract the message from an object', () => {
-    expect(extractMessage(['some', 'weird', 'error'])).toBe(JSON.stringify(['some', 'weird', 'error']));
-    expect(extractMessage({ omg: 'no error keys!', foo: 'bar' })).toBe(JSON.stringify({ omg: 'no error keys!', foo: 'bar' }));
+    expect(extractMessage(['some', 'weird', 'error'])).toBe(
+      JSON.stringify(['some', 'weird', 'error']),
+    );
+    expect(extractMessage({ omg: 'no error keys!', foo: 'bar' })).toBe(
+      JSON.stringify({ omg: 'no error keys!', foo: 'bar' }),
+    );
   });
 
   test('can extract a message from within an object', () => {
-    expect(extractMessage({ message: 'Ops! something went wrong', msg: 'did it?' })).toBe('Ops! something went wrong');
-    expect(extractMessage({ msg: 'The msg key is used by some APIs' })).toBe('The msg key is used by some APIs');
-    expect(extractMessage({ error: 'The error key is used by some APIs' })).toBe('The error key is used by some APIs');
-    expect(extractMessage({ err: 'The err key is used by some APIs' })).toBe('The err key is used by some APIs');
-    expect(extractMessage({ errors: 'The errors key is used by some APIs' })).toBe('The errors key is used by some APIs');
-    expect(extractMessage({ errs: 'The errs key is used by some APIs' })).toBe('The errs key is used by some APIs');
+    expect(extractMessage({ message: 'Ops! something went wrong', msg: 'did it?' })).toBe(
+      'Ops! something went wrong',
+    );
+    expect(extractMessage({ msg: 'The msg key is used by some APIs' })).toBe(
+      'The msg key is used by some APIs',
+    );
+    expect(extractMessage({ error: 'The error key is used by some APIs' })).toBe(
+      'The error key is used by some APIs',
+    );
+    expect(extractMessage({ err: 'The err key is used by some APIs' })).toBe(
+      'The err key is used by some APIs',
+    );
+    expect(extractMessage({ errors: 'The errors key is used by some APIs' })).toBe(
+      'The errors key is used by some APIs',
+    );
+    expect(extractMessage({ errs: 'The errs key is used by some APIs' })).toBe(
+      'The errs key is used by some APIs',
+    );
   });
 
   test('can extract a message when is deeply nested within an object', () => {
-    expect(extractMessage({ error: { err: { error: 'Oh my god! So nested :)' } } })).toBe('Oh my god! So nested :)');
-    expect(extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } })).toBe('This error message is nested deeply!');
+    expect(extractMessage({ error: { err: { error: 'Oh my god! So nested :)' } } })).toBe(
+      'Oh my god! So nested :)',
+    );
+    expect(
+      extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } }),
+    ).toBe('This error message is nested deeply!');
   });
 });
-
-
-
 
 describe('isDefaultErrorMessage', () => {
   test('can identify the default error message', () => {
@@ -89,34 +130,40 @@ describe('isDefaultErrorMessage', () => {
   });
 });
 
-
-
-
-
 describe('encodeError', () => {
   test('can encode a string error', () => {
     expect(encodeError('This is an error', 1)).toBe('This is an error{(1)}');
-    expect(encodeError('This is an error', 'INVALID_INPUT')).toBe('This is an error{(INVALID_INPUT)}');
+    expect(encodeError('This is an error', 'INVALID_INPUT')).toBe(
+      'This is an error{(INVALID_INPUT)}',
+    );
   });
 
   test('can encode an error instance', () => {
     expect(encodeError(new Error('This is an error'), 1)).toBe('This is an error{(1)}');
-    expect(encodeError(new ReferenceError('This is an error'), 'INVALID_INPUT')).toBe('This is an error{(INVALID_INPUT)}');
+    expect(encodeError(new ReferenceError('This is an error'), 'INVALID_INPUT')).toBe(
+      'This is an error{(INVALID_INPUT)}',
+    );
   });
 
   test('can encode an error instance with cause', () => {
-    expect(encodeError(new Error('This is an error', {
-      cause: new Error('This is the cause!'),
-    }), 1)).toBe('This is an error; [CAUSE]: This is the cause!{(1)}');
-    expect(encodeError(new Error('This is an error', {
-      cause: new Error('This is the cause!'),
-    }), 'INVALID_INPUT')).toBe('This is an error; [CAUSE]: This is the cause!{(INVALID_INPUT)}');
+    expect(
+      encodeError(
+        new Error('This is an error', {
+          cause: new Error('This is the cause!'),
+        }),
+        1,
+      ),
+    ).toBe('This is an error; [CAUSE]: This is the cause!{(1)}');
+    expect(
+      encodeError(
+        new Error('This is an error', {
+          cause: new Error('This is the cause!'),
+        }),
+        'INVALID_INPUT',
+      ),
+    ).toBe('This is an error; [CAUSE]: This is the cause!{(INVALID_INPUT)}');
   });
 });
-
-
-
-
 
 describe('decodeError', () => {
   test('can decode a basic error', () => {
@@ -124,7 +171,9 @@ describe('decodeError', () => {
       message: 'There was an error.',
       code: 100,
     });
-    expect(decodeError(encodeError(new Error('There was a nasty error.'), 'DB_ERROR'))).toStrictEqual({
+    expect(
+      decodeError(encodeError(new Error('There was a nasty error.'), 'DB_ERROR')),
+    ).toStrictEqual({
       message: 'There was a nasty error.',
       code: 'DB_ERROR',
     });
@@ -158,36 +207,46 @@ describe('decodeError', () => {
   });
 
   test('can decode the correct error code even if there appear to be multiple', () => {
-    expect(decodeError(
-      encodeError(`This is an error within an ${encodeError('This is a nested error', 'INVALID')}`, 'CORRECT_ERROR'),
-    )).toStrictEqual({
+    expect(
+      decodeError(
+        encodeError(
+          `This is an error within an ${encodeError('This is a nested error', 'INVALID')}`,
+          'CORRECT_ERROR',
+        ),
+      ),
+    ).toStrictEqual({
       message: `This is an error within an This is a nested error${wrapCode('INVALID')}`,
       code: 'CORRECT_ERROR',
     });
-    expect(decodeError(
-      encodeError(`This is an error within a nested ${CODE_WRAPPER.prefix}`, 'CORRECT_ERROR'),
-    )).toStrictEqual({
+    expect(
+      decodeError(
+        encodeError(`This is an error within a nested ${CODE_WRAPPER.prefix}`, 'CORRECT_ERROR'),
+      ),
+    ).toStrictEqual({
       message: `This is an error within a nested ${CODE_WRAPPER.prefix}`,
       code: 'CORRECT_ERROR',
     });
-    expect(decodeError(
-      encodeError(`This is an error within a nested ${CODE_WRAPPER.suffix}`, 'CORRECT_ERROR'),
-    )).toStrictEqual({
+    expect(
+      decodeError(
+        encodeError(`This is an error within a nested ${CODE_WRAPPER.suffix}`, 'CORRECT_ERROR'),
+      ),
+    ).toStrictEqual({
       message: `This is an error within a nested ${CODE_WRAPPER.suffix}`,
       code: 'CORRECT_ERROR',
     });
-    expect(decodeError(
-      encodeError(`This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`, 123456),
-    )).toStrictEqual({
+    expect(
+      decodeError(
+        encodeError(
+          `This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`,
+          123456,
+        ),
+      ),
+    ).toStrictEqual({
       message: `This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`,
       code: 123456,
     });
   });
 });
-
-
-
-
 
 describe('isEncodedError', () => {
   test('can identify an encoded error from a string', () => {
