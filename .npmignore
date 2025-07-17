@@ -1,3 +1,4 @@
+/.github
 /src
 .eslintrc.json
 jest.test-integration.config.json

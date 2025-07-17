@@ -11,14 +11,11 @@ const CODE_WRAPPER: IErrorCodeWrapper = {
 };
 
 // the default message if none can be extracted
-const DEFAULT_MESSAGE: string = 'The error message could not be extracted, check the logs for more information.';
+const DEFAULT_MESSAGE: string =
+  'The error message could not be extracted, check the logs for more information.';
 
 // the default code if none was provided or could not be extracted
 const DEFAULT_CODE: IErrorCode = -1;
-
-
-
-
 
 /* ************************************************************************************************
  *                                            HELPERS                                             *
@@ -29,14 +26,16 @@ const DEFAULT_CODE: IErrorCode = -1;
  * @param code
  * @returns string
  */
-const wrapCode = (code: IErrorCode): string => `${CODE_WRAPPER.prefix}${code ?? DEFAULT_CODE}${CODE_WRAPPER.suffix}`;
+const wrapCode = (code: IErrorCode): string =>
+  `${CODE_WRAPPER.prefix}${code ?? DEFAULT_CODE}${CODE_WRAPPER.suffix}`;
 
 /**
  * Checks if a given error is an encoded message.
  * @param message
  * @returns boolean
  */
-const __isEncodedError = (message: string): boolean => new RegExp(`${CODE_WRAPPER.prefix}.+${CODE_WRAPPER.suffix}$`).test(message);
+const __isEncodedError = (message: string): boolean =>
+  new RegExp(`${CODE_WRAPPER.prefix}.+${CODE_WRAPPER.suffix}$`).test(message);
 
 /**
  * Verifies if a given string is numeric.
@@ -62,10 +61,6 @@ const unwrapCode = (message: string): IUnwrappedErrorCode => {
   }
   return { code: -1, startsAt: -1 };
 };
-
-
-
-
 
 /* ************************************************************************************************
  *                                        MODULE EXPORTS                                          *

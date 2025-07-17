@@ -11,7 +11,9 @@ describe('wrapCode', () => {
   });
 
   test('can wrap a code in string format', () => {
-    expect(wrapCode('UNKNOWN_ERROR')).toBe(`${CODE_WRAPPER.prefix}UNKNOWN_ERROR${CODE_WRAPPER.suffix}`);
+    expect(wrapCode('UNKNOWN_ERROR')).toBe(
+      `${CODE_WRAPPER.prefix}UNKNOWN_ERROR${CODE_WRAPPER.suffix}`,
+    );
   });
 
   test('if an invalid code is provided, it wraps the default code', () => {
@@ -24,10 +26,6 @@ describe('wrapCode', () => {
   });
 });
 
-
-
-
-
 describe('unwrapCode', () => {
   test('can unwrap the code from a basic encoded error message', () => {
     expect(unwrapCode(`Some random error${wrapCode(1)}`)).toStrictEqual({
@@ -38,11 +36,17 @@ describe('unwrapCode', () => {
       code: 'INVALID_INPUT',
       startsAt: 17,
     });
-    expect(unwrapCode(`There has been an error when processing the request.${wrapCode(65451)}`)).toStrictEqual({
+    expect(
+      unwrapCode(`There has been an error when processing the request.${wrapCode(65451)}`),
+    ).toStrictEqual({
       code: 65451,
       startsAt: 52,
     });
-    expect(unwrapCode(`There has been an error when processing the request.${wrapCode('INTERNAL_DB_ERROR')}`)).toStrictEqual({
+    expect(
+      unwrapCode(
+        `There has been an error when processing the request.${wrapCode('INTERNAL_DB_ERROR')}`,
+      ),
+    ).toStrictEqual({
       code: 'INTERNAL_DB_ERROR',
       startsAt: 52,
     });
@@ -60,22 +64,30 @@ describe('unwrapCode', () => {
       code: -1,
       startsAt: -1,
     });
-    expect(unwrapCode(`Some random error${wrapCode('INVALID_INPUT')}. Something else..`)).toStrictEqual({
+    expect(
+      unwrapCode(`Some random error${wrapCode('INVALID_INPUT')}. Something else..`),
+    ).toStrictEqual({
       code: -1,
       startsAt: -1,
     });
   });
 
   test('can unwrap the code even if there appears to be another error code encoded in the message', () => {
-    expect(unwrapCode(`Some random${wrapCode(1)} error${wrapCode('INVALID_INPUT')}`)).toStrictEqual({
-      code: 'INVALID_INPUT',
-      startsAt: 22,
-    });
-    expect(unwrapCode(`Some random${CODE_WRAPPER.prefix} error${wrapCode('INVALID_INPUT')}`)).toStrictEqual({
+    expect(unwrapCode(`Some random${wrapCode(1)} error${wrapCode('INVALID_INPUT')}`)).toStrictEqual(
+      {
+        code: 'INVALID_INPUT',
+        startsAt: 22,
+      },
+    );
+    expect(
+      unwrapCode(`Some random${CODE_WRAPPER.prefix} error${wrapCode('INVALID_INPUT')}`),
+    ).toStrictEqual({
       code: 'INVALID_INPUT',
       startsAt: 19,
     });
-    expect(unwrapCode(`Some random${CODE_WRAPPER.suffix} error${wrapCode('INVALID_INPUT')}`)).toStrictEqual({
+    expect(
+      unwrapCode(`Some random${CODE_WRAPPER.suffix} error${wrapCode('INVALID_INPUT')}`),
+    ).toStrictEqual({
       code: 'INVALID_INPUT',
       startsAt: 19,
     });

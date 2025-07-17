@@ -1,5 +1,3 @@
-
-
 /* ************************************************************************************************
  *                                             TYPES                                              *
  ************************************************************************************************ */
@@ -10,8 +8,8 @@
  * it can be decoded later.
  */
 type IErrorCodeWrapper = {
-  prefix: string,
-  suffix: string,
+  prefix: string;
+  suffix: string;
 };
 
 /**
@@ -27,10 +25,10 @@ type IErrorCode = string | number;
  */
 type IUnwrappedErrorCode = {
   // the code used to wrap the error originally. If none is found it defaults to -1
-  code: IErrorCode,
+  code: IErrorCode;
 
   // the index at which the error code starts. If no code is found it defaults to -1
-  startsAt: number
+  startsAt: number;
 };
 
 /**
@@ -39,20 +37,11 @@ type IUnwrappedErrorCode = {
  * cannot be extracted for any reason, the default values will be set instead.
  */
 type IDecodedError = {
-  message: string,
-  code: IErrorCode,
+  message: string;
+  code: IErrorCode;
 };
-
-
-
-
 
 /* ************************************************************************************************
  *                                        MODULE EXPORTS                                          *
  ************************************************************************************************ */
-export type {
-  IErrorCodeWrapper,
-  IErrorCode,
-  IUnwrappedErrorCode,
-  IDecodedError,
-};
+export type { IErrorCodeWrapper, IErrorCode, IUnwrappedErrorCode, IDecodedError };

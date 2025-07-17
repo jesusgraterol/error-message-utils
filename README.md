@@ -12,7 +12,7 @@ The `error-message-utils` package simplifies error management in your web applic
 
 Install the package:
 ```bash
-npm install -S error-message-utils
+npm i -S error-message-utils
 ```
 
 ### Examples
@@ -165,28 +165,3 @@ npm run test:unit
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
-
-
-
-
-
-<br/>
-
-## Deployment
-
-Install dependencies:
-```bash
-npm install
-```
-
-
-Build the library:
-```bash
-npm start
-```
-
-
-Publish to `npm`:
-```bash
-npm publish
-```
