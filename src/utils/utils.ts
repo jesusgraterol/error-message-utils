@@ -1,56 +1,36 @@
-import { IErrorCodeWrapper, IErrorCode, IUnwrappedErrorCode } from '../shared/types.js';
-
-/* ************************************************************************************************
- *                                           CONSTANTS                                            *
- ************************************************************************************************ */
-
-// the wrapper that will be used for error codes
-const CODE_WRAPPER: IErrorCodeWrapper = {
-  prefix: '{(',
-  suffix: ')}',
-};
-
-// the default message if none can be extracted
-const DEFAULT_MESSAGE: string =
-  'The error message could not be extracted, check the logs for more information.';
-
-// the default code if none was provided or could not be extracted
-const DEFAULT_CODE: IErrorCode = -1;
-
-/* ************************************************************************************************
- *                                            HELPERS                                             *
- ************************************************************************************************ */
+import { IErrorCode, IUnwrappedErrorCode } from '../shared/types.js';
+import { CODE_WRAPPER, DEFAULT_CODE } from '../shared/constants.js';
 
 /**
  * Wraps a given error code. If none is provided, it wraps the default code.
- * @param code
- * @returns string
+ * @param code The error code to wrap.
+ * @returns A string containing the wrapped error code.
  */
-const wrapCode = (code: IErrorCode): string =>
+export const wrapCode = (code: IErrorCode): string =>
   `${CODE_WRAPPER.prefix}${code ?? DEFAULT_CODE}${CODE_WRAPPER.suffix}`;
 
 /**
  * Checks if a given error is an encoded message.
- * @param message
- * @returns boolean
+ * @param message The message to check.
+ * @returns A boolean indicating whether the message is an encoded error or not.
  */
 const __isEncodedError = (message: string): boolean =>
   new RegExp(`${CODE_WRAPPER.prefix}.+${CODE_WRAPPER.suffix}$`).test(message);
 
 /**
  * Verifies if a given string is numeric.
- * @param code
- * @returns boolean
+ * @param code The string to check.
+ * @returns A boolean indicating whether the string is numeric or not.
  */
 const __isNumeric = (code: string) => !Number.isNaN(Number.parseFloat(code));
 
 /**
  * Verifies if a message is an encoded error and if so, attempts to extract the code.
  * If unsuccessful, both code and startsAt values will be -1.
- * @param message
- * @returns IUnwrappedErrorCode
+ * @param message The message to unwrap.
+ * @returns An object containing the unwrapped error code and its starting position.
  */
-const unwrapCode = (message: string): IUnwrappedErrorCode => {
+export const unwrapCode = (message: string): IUnwrappedErrorCode => {
   if (__isEncodedError(message)) {
     const startsAt = message.lastIndexOf(CODE_WRAPPER.prefix);
     const code = message.substring(startsAt + 2, message.lastIndexOf(CODE_WRAPPER.suffix));
@@ -59,19 +39,5 @@ const unwrapCode = (message: string): IUnwrappedErrorCode => {
       startsAt,
     };
   }
-  return { code: -1, startsAt: -1 };
-};
-
-/* ************************************************************************************************
- *                                        MODULE EXPORTS                                          *
- ************************************************************************************************ */
-export {
-  // constants
-  CODE_WRAPPER,
-  DEFAULT_MESSAGE,
-  DEFAULT_CODE,
-
-  // helpers
-  wrapCode,
-  unwrapCode,
+  return { code: DEFAULT_CODE, startsAt: -1 };
 };

@@ -1,13 +1,9 @@
-/* ************************************************************************************************
- *                                             TYPES                                              *
- ************************************************************************************************ */
-
 /**
  * Error Code Wrapper
  * When an error code is inserted into a message (encoding a message), it must be wrapped first so
  * it can be decoded later.
  */
-type IErrorCodeWrapper = {
+export type IErrorCodeWrapper = {
   prefix: string;
   suffix: string;
 };
@@ -17,13 +13,13 @@ type IErrorCodeWrapper = {
  * The code that is inserted when encoding an error. If none is provided or none can be extracted,
  * it defaults to -1.
  */
-type IErrorCode = string | number;
+export type IErrorCode = string | number;
 
 /**
  * Unwrapped Error Code
  * In order to decode an error, the code must be first unwrapped.
  */
-type IUnwrappedErrorCode = {
+export type IUnwrappedErrorCode = {
   // the code used to wrap the error originally. If none is found it defaults to -1
   code: IErrorCode;
 
@@ -36,12 +32,7 @@ type IUnwrappedErrorCode = {
  * The object obtained when an error is decoded. Keep in mind that if the error message or the code
  * cannot be extracted for any reason, the default values will be set instead.
  */
-type IDecodedError = {
+export type IDecodedError = {
   message: string;
   code: IErrorCode;
 };
-
-/* ************************************************************************************************
- *                                        MODULE EXPORTS                                          *
- ************************************************************************************************ */
-export type { IErrorCodeWrapper, IErrorCode, IUnwrappedErrorCode, IDecodedError };

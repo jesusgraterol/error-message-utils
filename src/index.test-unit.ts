@@ -1,4 +1,5 @@
-import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from './utils/utils.js';
+import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
+import { wrapCode } from './utils/utils.js';
 import {
   extractMessage,
   isDefaultErrorMessage,
@@ -107,6 +108,21 @@ describe('extractMessage', () => {
     expect(extractMessage({ errs: 'The errs key is used by some APIs' })).toBe(
       'The errs key is used by some APIs',
     );
+    expect(extractMessage({ reason: 'The reason key is used by some APIs' })).toBe(
+      'The reason key is used by some APIs',
+    );
+    expect(extractMessage({ reasons: 'The reason key is used by some APIs' })).toBe(
+      'The reason key is used by some APIs',
+    );
+    expect(extractMessage({ issue: 'The issue key is used by some APIs' })).toBe(
+      'The issue key is used by some APIs',
+    );
+    expect(extractMessage({ issues: 'The issues key is used by some APIs' })).toBe(
+      'The issues key is used by some APIs',
+    );
+    expect(extractMessage({ data: { someKey: 'someValue', someOtherKey: 123456 } })).toBe(
+      JSON.stringify({ someKey: 'someValue', someOtherKey: 123456 }),
+    );
   });
 
   test('can extract a message when is deeply nested within an object', () => {
@@ -195,14 +211,14 @@ describe('decodeError', () => {
     });
   });
 
-  test('returns -1 as the code if it is not an encoded error message', () => {
+  test('returns DEFAULT_CODE as the code if it is not an encoded error message', () => {
     expect(decodeError('There was an error.')).toStrictEqual({
       message: 'There was an error.',
-      code: -1,
+      code: DEFAULT_CODE,
     });
     expect(decodeError('There was an error{(100)}.')).toStrictEqual({
       message: 'There was an error{(100)}.',
-      code: -1,
+      code: DEFAULT_CODE,
     });
   });
 
@@ -252,7 +268,7 @@ describe('isEncodedError', () => {
   test('can identify an encoded error from a string', () => {
     expect(isEncodedError(encodeError('There was an error.', 100))).toBe(true);
     expect(isEncodedError('There was an error.')).toBe(false);
-    expect(isEncodedError(encodeError('There was an error.', -1))).toBe(false);
+    expect(isEncodedError(encodeError('There was an error.', DEFAULT_CODE))).toBe(false);
   });
 
   test('can identify an encoded error from an error instance', () => {
