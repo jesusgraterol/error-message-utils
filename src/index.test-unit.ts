@@ -1,4 +1,6 @@
-import { DEFAULT_MESSAGE, CODE_WRAPPER, wrapCode } from './utils/utils.js';
+import { z } from 'zod';
+import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
+import { wrapCode } from './utils/utils.js';
 import {
   extractMessage,
   isDefaultErrorMessage,
@@ -107,6 +109,21 @@ describe('extractMessage', () => {
     expect(extractMessage({ errs: 'The errs key is used by some APIs' })).toBe(
       'The errs key is used by some APIs',
     );
+    expect(extractMessage({ reason: 'The reason key is used by some APIs' })).toBe(
+      'The reason key is used by some APIs',
+    );
+    expect(extractMessage({ reasons: 'The reason key is used by some APIs' })).toBe(
+      'The reason key is used by some APIs',
+    );
+    expect(extractMessage({ issue: 'The issue key is used by some APIs' })).toBe(
+      'The issue key is used by some APIs',
+    );
+    expect(extractMessage({ issues: 'The issues key is used by some APIs' })).toBe(
+      'The issues key is used by some APIs',
+    );
+    expect(extractMessage({ data: { someKey: 'someValue', someOtherKey: 123456 } })).toBe(
+      JSON.stringify({ someKey: 'someValue', someOtherKey: 123456 }),
+    );
   });
 
   test('can extract a message when is deeply nested within an object', () => {
@@ -116,6 +133,34 @@ describe('extractMessage', () => {
     expect(
       extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } }),
     ).toBe('This error message is nested deeply!');
+  });
+
+  test('can extract a message from ZodErrors', () => {
+    try {
+      z.object({ name: z.string() }).parse({ name: 123 });
+    } catch (error) {
+      expect(extractMessage(error)).toBe('Invalid input: expected string, received number (name)');
+    }
+
+    try {
+      z.object({ name: z.object({ age: z.number() }) }).parse({ name: { age: 'not a number' } });
+    } catch (error) {
+      expect(extractMessage(error)).toBe(
+        'Invalid input: expected number, received string (name.age)',
+      );
+    }
+
+    try {
+      z.object({
+        someDict: z.object({ innerList: z.array(z.object({ someProp: z.string() })) }),
+      }).parse({
+        someDict: { innerList: [{ someProp: 123 }] },
+      });
+    } catch (error) {
+      expect(extractMessage(error)).toBe(
+        'Invalid input: expected string, received number (someDict.innerList.0.someProp)',
+      );
+    }
   });
 });
 
@@ -195,14 +240,14 @@ describe('decodeError', () => {
     });
   });
 
-  test('returns -1 as the code if it is not an encoded error message', () => {
+  test('returns DEFAULT_CODE as the code if it is not an encoded error message', () => {
     expect(decodeError('There was an error.')).toStrictEqual({
       message: 'There was an error.',
-      code: -1,
+      code: DEFAULT_CODE,
     });
     expect(decodeError('There was an error{(100)}.')).toStrictEqual({
       message: 'There was an error{(100)}.',
-      code: -1,
+      code: DEFAULT_CODE,
     });
   });
 
@@ -252,7 +297,7 @@ describe('isEncodedError', () => {
   test('can identify an encoded error from a string', () => {
     expect(isEncodedError(encodeError('There was an error.', 100))).toBe(true);
     expect(isEncodedError('There was an error.')).toBe(false);
-    expect(isEncodedError(encodeError('There was an error.', -1))).toBe(false);
+    expect(isEncodedError(encodeError('There was an error.', DEFAULT_CODE))).toBe(false);
   });
 
   test('can identify an encoded error from an error instance', () => {

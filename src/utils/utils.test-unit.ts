@@ -1,4 +1,5 @@
-import { CODE_WRAPPER, unwrapCode, wrapCode } from './utils.js';
+import { CODE_WRAPPER, DEFAULT_CODE } from '../shared/constants.js';
+import { unwrapCode, wrapCode } from './utils.js';
 
 /* ************************************************************************************************
  *                                             TESTS                                              *
@@ -54,20 +55,20 @@ describe('unwrapCode', () => {
 
   test('returns -1 if there is no code to unwrap', () => {
     expect(unwrapCode('Some random error.')).toStrictEqual({
-      code: -1,
+      code: DEFAULT_CODE,
       startsAt: -1,
     });
   });
 
   test('for the code to be unwrapped, it must be a the very end of the error message', () => {
     expect(unwrapCode(`Some random error${wrapCode(1)} `)).toStrictEqual({
-      code: -1,
+      code: DEFAULT_CODE,
       startsAt: -1,
     });
     expect(
       unwrapCode(`Some random error${wrapCode('INVALID_INPUT')}. Something else..`),
     ).toStrictEqual({
-      code: -1,
+      code: DEFAULT_CODE,
       startsAt: -1,
     });
   });
