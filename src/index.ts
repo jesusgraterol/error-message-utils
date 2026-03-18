@@ -37,7 +37,7 @@ const __extractPathFromZodError = (error: ZodError): string => {
  * @param error The ZodError instance to extract the message from.
  * @returns The extracted error message or the default message.
  */
-const extractZodErrorMessage = (error: ZodError): string => {
+const __extractZodErrorMessage = (error: ZodError): string => {
   if (
     error &&
     Array.isArray(error.issues) &&
@@ -68,7 +68,7 @@ const extractMessage = (error: any): string => {
 
   // if it is a ZodError, extract the message
   if (error instanceof ZodError) {
-    return extractZodErrorMessage(error);
+    return __extractZodErrorMessage(error);
   }
 
   // if it is an instance of an error, check if there is a cause and handle it recursively.
@@ -188,7 +188,6 @@ export {
   type IDecodedError,
 
   // error message extraction
-  extractZodErrorMessage,
   extractMessage,
 
   // encoding

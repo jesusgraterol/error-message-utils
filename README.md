@@ -17,7 +17,7 @@ npm i -S error-message-utils
 
 ### Examples
 
-Encoding an error:
+Encode an error:
 
 ```typescript
 import { encodeError } from 'error-message-utils';
@@ -34,7 +34,7 @@ if (emailExists()) {
 
 <br/>
 
-Decoding an error:
+Decode an error:
 
 ```typescript
 import { decodeError } from 'error-message-utils';
@@ -75,7 +75,25 @@ extractMessage({
 
 <br/>
 
-Identifying encoded errors:
+Extract detailed error messages from [Zod](https://zod.dev/basics) parsing errors.
+
+```typescript
+import { z } from "zod";
+import { extractMessage } from 'error-message-utils';
+
+z.object({ name: z.string() }).parse({ name: 123 });
+// Invalid input: expected string, received number (name)
+
+z.object({ 
+  name: z.object({ age: z.number() }) 
+}).parse({ name: { age: 'not a number' } })
+// Invalid input: expected string, received number (someDict.innerList.0.someProp)
+```
+
+
+<br/>
+
+Identify encoded errors:
 
 ```typescript
 import { isEncodedError, encodeError } from 'error-message-utils';

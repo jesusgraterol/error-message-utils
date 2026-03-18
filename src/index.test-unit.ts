@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
 import { wrapCode } from './utils/utils.js';
 import {
@@ -132,6 +133,34 @@ describe('extractMessage', () => {
     expect(
       extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } }),
     ).toBe('This error message is nested deeply!');
+  });
+
+  test('can extract a message from ZodErrors', () => {
+    try {
+      z.object({ name: z.string() }).parse({ name: 123 });
+    } catch (error) {
+      expect(extractMessage(error)).toBe('Invalid input: expected string, received number (name)');
+    }
+
+    try {
+      z.object({ name: z.object({ age: z.number() }) }).parse({ name: { age: 'not a number' } });
+    } catch (error) {
+      expect(extractMessage(error)).toBe(
+        'Invalid input: expected number, received string (name.age)',
+      );
+    }
+
+    try {
+      z.object({
+        someDict: z.object({ innerList: z.array(z.object({ someProp: z.string() })) }),
+      }).parse({
+        someDict: { innerList: [{ someProp: 123 }] },
+      });
+    } catch (error) {
+      expect(extractMessage(error)).toBe(
+        'Invalid input: expected string, received number (someDict.innerList.0.someProp)',
+      );
+    }
   });
 });
 
