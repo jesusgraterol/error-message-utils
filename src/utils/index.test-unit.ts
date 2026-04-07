@@ -1,5 +1,6 @@
+import { describe, test, expect } from '@jest/globals';
 import { CODE_WRAPPER, DEFAULT_CODE } from '../shared/constants.js';
-import { unwrapCode, wrapCode } from './utils.js';
+import { unwrapCode, wrapCode } from './index.js';
 
 /* ************************************************************************************************
  *                                             TESTS                                              *

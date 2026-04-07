@@ -1,6 +1,7 @@
+import { describe, test, expect } from '@jest/globals';
 import { z } from 'zod';
-import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
-import { wrapCode } from './utils/utils.js';
+import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
+import { wrapCode } from '../utils/index.js';
 import {
   extractMessage,
   isDefaultErrorMessage,
