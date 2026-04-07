@@ -7,6 +7,7 @@ import {
   isDefaultErrorMessage,
   isEncodedError,
 } from './error-handler/index.js';
+import { Exception } from './exception/index.js';
 
 /**
  * Module exports
@@ -26,4 +27,7 @@ export {
 
   // misc helpers
   isDefaultErrorMessage,
+
+  // exception class
+  Exception,
 };
