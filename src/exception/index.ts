@@ -1,14 +1,20 @@
 import { type IErrorCode } from '../shared/types.js';
-import { encodeError, extractMessage } from '../error-handler/index.js';
+import { decodeError, encodeError } from '../error-handler/index.js';
 
 export class Exception extends Error {
+  // the code of the error
   public readonly code: IErrorCode;
 
-  constructor(error: unknown, code: IErrorCode) {
-    super(extractMessage(error));
+  constructor(error: unknown, code?: IErrorCode) {
+    // decode the error to extract the message and the code (if any)
+    const decodedError = decodeError(error);
 
+    // call the super constructor with the decoded message
+    super(decodedError.message);
+
+    // init props
     this.name = 'Exception';
-    this.code = code;
+    this.code = code ?? decodedError.code;
   }
 
   /**
