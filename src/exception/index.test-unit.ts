@@ -3,6 +3,42 @@ import { encodeError } from '../error-handler/index.js';
 import { Exception } from './index.js';
 
 describe('Exception', () => {
+  test('creates an instance of Exception with the provided message and code', () => {
+    const exception = new Exception('An error occurred', 'ERROR_CODE');
+    expect(exception).toBeInstanceOf(Exception);
+    expect(exception.message).toBe('An error occurred');
+    expect(exception.code).toBe('ERROR_CODE');
+  });
+
+  test('defaults to -1 code when no code is provided', () => {
+    const exception = new Exception('An error occurred');
+    expect(exception.code).toBe(-1);
+  });
+
+  test('can be instantiated with an encoded error message and code', () => {
+    const encodedMessage = encodeError('An error occurred', 'ERROR_CODE');
+    const exception = new Exception(encodedMessage);
+    expect(exception.message).toBe('An error occurred');
+    expect(exception.code).toBe('ERROR_CODE');
+    expect(exception.toString()).toBe(encodedMessage);
+  });
+
+  test('can be instantiated with an encoded error message in Error instance', () => {
+    const encodedMessage = encodeError('An error occurred', 'ERROR_CODE');
+    const exception = new Exception(new Error(encodedMessage));
+    expect(exception.message).toBe('An error occurred');
+    expect(exception.code).toBe('ERROR_CODE');
+    expect(exception.toString()).toBe(encodedMessage);
+  });
+
+  test('the provided code overrides the decoded code', () => {
+    const encodedMessage = encodeError('An error occurred', 'ERROR_CODE');
+    const exception = new Exception(new Error(encodedMessage), 'OVERRIDE_CODE');
+    expect(exception.message).toBe('An error occurred');
+    expect(exception.code).toBe('OVERRIDE_CODE');
+    expect(exception.toString()).toBe(encodeError('An error occurred', 'OVERRIDE_CODE'));
+  });
+
   test('extends Error and preserves the extracted message, name, and code', () => {
     const originalError = new Error('request failed');
     const exception = new Exception(originalError, 'OPENAI_REQUEST_FAILED');
