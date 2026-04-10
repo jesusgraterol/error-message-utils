@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { IErrorCode, IDecodedError } from './shared/types.js';
+import { DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
 import {
   decodeError,
   encodeError,
@@ -16,6 +17,10 @@ export {
   // types
   type IErrorCode,
   type IDecodedError,
+
+  // constants
+  DEFAULT_MESSAGE,
+  DEFAULT_CODE,
 
   // error message extraction
   extractMessage,

@@ -172,6 +172,20 @@ type IDecodedError = {
 ```
 
 
+<br/>
+
+## Constants
+
+```typescript
+// the default message if none can be extracted
+const DEFAULT_MESSAGE: string =
+  'The error message could not be extracted, check the logs for more information.';
+
+// the default code if none was provided or could not be extracted
+const DEFAULT_CODE: IErrorCode = -1;
+```
+
+
 
 <br/>
 
