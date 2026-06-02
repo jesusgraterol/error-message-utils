@@ -147,6 +147,12 @@ exception instanceof Exception; // true
 exception.message; // "Request failed"
 exception.code; // "SOME_ERROR_CODE"
 exception.toString(); // "Request failed{(SOME_ERROR_CODE)}"
+exception.toRecord();
+// {
+//   message: "Request failed",
+//   code: "SOME_ERROR_CODE",
+//   data: null,
+// }
 ```
 
 
@@ -168,6 +174,16 @@ type IErrorCode = string | number;
 type IDecodedError = {
   message: string,
   code: IErrorCode,
+};
+
+/**
+ * Exception Record
+ * The record type for the Exception class.
+*/
+type IExceptionRecord = {
+  message: string;
+  code: IErrorCode;
+  data: unknown | null;
 };
 ```
 
