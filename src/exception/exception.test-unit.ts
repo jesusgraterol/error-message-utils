@@ -1,6 +1,8 @@
 import { describe, expect, test } from '@jest/globals';
+
 import { encodeError } from '../error-handler/index.js';
-import { Exception } from './index.js';
+import { DEFAULT_CODE } from '../shared/constants.js';
+import { Exception } from './exception.js';
 
 describe('Exception', () => {
   test('creates an instance of Exception with the provided message and code', () => {
@@ -10,9 +12,9 @@ describe('Exception', () => {
     expect(exception.code).toBe('ERROR_CODE');
   });
 
-  test('defaults to -1 code when no code is provided', () => {
+  test('defaults to the default code when no code is provided', () => {
     const exception = new Exception('An error occurred');
-    expect(exception.code).toBe(-1);
+    expect(exception.code).toBe(DEFAULT_CODE);
   });
 
   test('can be instantiated with an encoded error message and code', () => {
@@ -87,6 +89,63 @@ describe('Exception', () => {
     expect(exception.message).toBe('unknown error');
     expect(exception.code).toBe(-1);
     expect(String(exception)).toBe(expectation);
+  });
+
+  test('stores the provided exception data', () => {
+    const exceptionData = {
+      requestId: 'request-1',
+      retryable: false,
+    };
+    const exception = new Exception('request failed', 'REQUEST_FAILED', exceptionData);
+
+    expect(exception.data).toStrictEqual(exceptionData);
+  });
+
+  test('can store data while using a decoded code', () => {
+    const encodedMessage = encodeError('request failed', 'REQUEST_FAILED');
+    const exceptionData = {
+      requestId: 'request-1',
+    };
+    const exception = new Exception(encodedMessage, undefined, exceptionData);
+
+    expect(exception.message).toBe('request failed');
+    expect(exception.code).toBe('REQUEST_FAILED');
+    expect(exception.data).toStrictEqual(exceptionData);
+  });
+
+  test('converts the exception to a record', () => {
+    const exceptionData = {
+      requestId: 'request-1',
+      statusCode: 503,
+    };
+    const exception = new Exception('service unavailable', 'SERVICE_UNAVAILABLE', exceptionData);
+
+    expect(exception.toRecord()).toStrictEqual({
+      message: 'service unavailable',
+      code: 'SERVICE_UNAVAILABLE',
+      data: exceptionData,
+    });
+  });
+
+  test('uses null data in the record when no exception data is provided', () => {
+    const exception = new Exception('service unavailable', 'SERVICE_UNAVAILABLE');
+
+    expect(exception.data).toBeUndefined();
+    expect(exception.toRecord()).toStrictEqual({
+      message: 'service unavailable',
+      code: 'SERVICE_UNAVAILABLE',
+      data: null,
+    });
+  });
+
+  test('preserves defined falsy exception data in the record', () => {
+    const exception = new Exception('feature disabled', 'FEATURE_DISABLED', false);
+
+    expect(exception.toRecord()).toStrictEqual({
+      message: 'feature disabled',
+      code: 'FEATURE_DISABLED',
+      data: false,
+    });
   });
 
   test('handles errors with cause property', () => {
