@@ -22,7 +22,8 @@ const __isEncodedError = (message: string): boolean =>
  * @param code The string to check.
  * @returns A boolean indicating whether the string is numeric or not.
  */
-const __isNumeric = (code: string) => !Number.isNaN(Number.parseFloat(code));
+const __isNumeric = (code: string) =>
+  typeof code === 'string' && /^[-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(code);
 
 /**
  * Verifies if a message is an encoded error and if so, attempts to extract the code.
@@ -33,7 +34,10 @@ const __isNumeric = (code: string) => !Number.isNaN(Number.parseFloat(code));
 export const unwrapCode = (message: string): IUnwrappedErrorCode => {
   if (__isEncodedError(message)) {
     const startsAt = message.lastIndexOf(CODE_WRAPPER.prefix);
-    const code = message.substring(startsAt + 2, message.lastIndexOf(CODE_WRAPPER.suffix));
+    const code = message.substring(
+      startsAt + CODE_WRAPPER.prefix.length,
+      message.lastIndexOf(CODE_WRAPPER.suffix),
+    );
     return {
       code: __isNumeric(code) ? Number(code) : code,
       startsAt,
