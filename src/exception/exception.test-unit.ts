@@ -160,4 +160,14 @@ describe('Exception', () => {
       encodeError('database connection failed; [CAUSE]: network timeout', -1),
     );
   });
+
+  test('can init message and code from an error message', () => {
+    const exception = new Exception(
+      'The format of the provided email is invalid. It must be a valid email address and belong to the organization.{(17,025,551)}',
+    );
+    expect(exception.message).toBe(
+      'The format of the provided email is invalid. It must be a valid email address and belong to the organization.',
+    );
+    expect(exception.code).toBe('17,025,551');
+  });
 });
