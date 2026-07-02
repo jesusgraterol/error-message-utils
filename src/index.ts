@@ -4,11 +4,12 @@ export { DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
 
 // error handler
 export {
-  decodeError,
-  encodeError,
   extractMessage,
-  isDefaultErrorMessage,
+  encodeError,
+  decodeError,
   isEncodedError,
+  hasErrorCode,
+  isDefaultErrorMessage,
 } from './error-handler/index.js';
 
 // exception

@@ -1,5 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { z } from 'zod';
+import { Exception } from '../exception/index.js';
 import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { wrapCode } from '../utils/index.js';
 import {
@@ -8,6 +9,7 @@ import {
   encodeError,
   decodeError,
   isEncodedError,
+  hasErrorCode,
 } from './index.js';
 
 /* ************************************************************************************************
@@ -304,5 +306,75 @@ describe('isEncodedError', () => {
   test('can identify an encoded error from an error instance', () => {
     expect(isEncodedError(new Error(encodeError('There was an error.', 100)))).toBe(true);
     expect(isEncodedError(new Error('There was an error.'))).toBe(false);
+  });
+});
+
+describe('hasErrorCode', () => {
+  test('matches raw error code values using strict equality', () => {
+    expect(hasErrorCode('INVALID_INPUT', 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCode(100, 100)).toBe(true);
+    expect(hasErrorCode(0, 0)).toBe(true);
+    expect(hasErrorCode('100', 100)).toBe(false);
+    expect(hasErrorCode(100, '100')).toBe(false);
+  });
+
+  test('matches object errors that expose the provided code', () => {
+    expect(hasErrorCode({ code: 'INVALID_INPUT' }, 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCode({ code: 100 }, 100)).toBe(true);
+    expect(hasErrorCode({ code: '100' }, 100)).toBe(false);
+    expect(hasErrorCode({ code: 100 }, '100')).toBe(false);
+    expect(hasErrorCode({ code: 'OTHER_CODE' }, 'INVALID_INPUT')).toBe(false);
+  });
+
+  test('matches encoded errors from supported error shapes', () => {
+    const encodedErrorMessage = encodeError('There was an error.', 'INVALID_INPUT');
+
+    expect(hasErrorCode(encodedErrorMessage, 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCode(new Error(encodedErrorMessage), 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCode({ message: encodedErrorMessage }, 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCode({ error: encodedErrorMessage }, 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCode(encodedErrorMessage, 'OTHER_CODE')).toBe(false);
+  });
+
+  test('matches the decoded code when the object code does not match', () => {
+    expect(
+      hasErrorCode(
+        {
+          code: 'OUTER_CODE',
+          message: encodeError('There was an error.', 'INNER_CODE'),
+        },
+        'INNER_CODE',
+      ),
+    ).toBe(true);
+  });
+
+  test('matches Exception instances by their resolved code', () => {
+    expect(
+      hasErrorCode(new Exception('There was an error.', 'INVALID_INPUT'), 'INVALID_INPUT'),
+    ).toBe(true);
+    expect(hasErrorCode(new Exception(encodeError('There was an error.', 100)), 100)).toBe(true);
+    expect(hasErrorCode(new Exception('There was an error.'), DEFAULT_CODE)).toBe(true);
+    expect(hasErrorCode(new Exception('There was an error.', 'INVALID_INPUT'), 'OTHER_CODE')).toBe(
+      false,
+    );
+  });
+
+  test('does not match missing, malformed, or different non-default codes', () => {
+    expect(hasErrorCode(null, 'INVALID_INPUT')).toBe(false);
+    expect(hasErrorCode(undefined, 'INVALID_INPUT')).toBe(false);
+    expect(hasErrorCode('', 'INVALID_INPUT')).toBe(false);
+    expect(hasErrorCode(false, 'INVALID_INPUT')).toBe(false);
+    expect(hasErrorCode({}, 'INVALID_INPUT')).toBe(false);
+    expect(hasErrorCode(new Error('There was an error.'), 'INVALID_INPUT')).toBe(false);
+    expect(hasErrorCode('There was an error{(INVALID_INPUT)}.', 'INVALID_INPUT')).toBe(false);
+  });
+
+  test('uses the decodeError fallback behavior for the default code', () => {
+    expect(hasErrorCode(undefined, DEFAULT_CODE)).toBe(true);
+    expect(hasErrorCode('', DEFAULT_CODE)).toBe(true);
+    expect(hasErrorCode(false, DEFAULT_CODE)).toBe(true);
+    expect(hasErrorCode({}, DEFAULT_CODE)).toBe(true);
+    expect(hasErrorCode(new Error('There was an error.'), DEFAULT_CODE)).toBe(true);
+    expect(hasErrorCode(null, DEFAULT_CODE)).toBe(false);
   });
 });

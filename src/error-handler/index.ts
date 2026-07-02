@@ -1,58 +1,14 @@
 /* eslint-disable no-console */
 import { ZodError } from 'zod';
+
 import { IErrorCode, IDecodedError } from '../shared/types.js';
 import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { wrapCode, unwrapCode } from '../utils/index.js';
-
-/* ************************************************************************************************
- *                                         IMPLEMENTATION                                         *
- ************************************************************************************************ */
-
-/**------------------------------------------------------------------------------------------------
- * Zod specific errors
- -------------------------------------------------------------------------------------------------*/
+import { extractZodErrorMessage } from './utilities.js';
 
 /**
- * Attempts to extract the path from a ZodError instance. If unable to do so, it returns
- * 'Unknown path'.
- * @param error The ZodError instance to extract the path from.
- * @returns The extracted path.
- */
-const __extractPathFromZodError = (error: ZodError): string => {
-  if (
-    error &&
-    Array.isArray(error.issues) &&
-    error.issues.length &&
-    Array.isArray(error.issues[0].path) &&
-    error.issues[0].path.length
-  ) {
-    return error.issues[0].path.join('.');
-  }
-  return 'Unknown path';
-};
-
-/**
- * Attempts to extract a Zod error message from a ZodError instance. If unable to do so, it returns
- * the default error message.
- * @param error The ZodError instance to extract the message from.
- * @returns The extracted error message or the default message.
- */
-const __extractZodErrorMessage = (error: ZodError): string => {
-  if (
-    error &&
-    Array.isArray(error.issues) &&
-    error.issues.length &&
-    Array.isArray(error.issues[0].path) &&
-    error.issues[0].message
-  ) {
-    return `${error.issues[0].message} (${__extractPathFromZodError(error)})`;
-  }
-  return DEFAULT_MESSAGE;
-};
-
-/**------------------------------------------------------------------------------------------------
  * General errors
- -------------------------------------------------------------------------------------------------*/
+ */
 
 /**
  * Attempts to extract an error message from an error that could be anything. If it fails to do so,
@@ -60,7 +16,7 @@ const __extractZodErrorMessage = (error: ZodError): string => {
  * @param error The error to extract the message from.
  * @returns A string containing the extracted message or the default message if extraction fails.
  */
-const extractMessage = (error: any): string => {
+export const extractMessage = (error: any): string => {
   // if the error is a string, return it as is
   if (typeof error === 'string' && error.length) {
     return error;
@@ -68,7 +24,7 @@ const extractMessage = (error: any): string => {
 
   // if it is a ZodError, extract the message
   if (error instanceof ZodError) {
-    return __extractZodErrorMessage(error);
+    return extractZodErrorMessage(error);
   }
 
   // if it is an instance of an error, check if there is a cause and handle it recursively.
@@ -129,9 +85,9 @@ const extractMessage = (error: any): string => {
   return DEFAULT_MESSAGE;
 };
 
-/**------------------------------------------------------------------------------------------------
- * Encoding
- -------------------------------------------------------------------------------------------------*/
+/**
+ * Encoding / Decoding
+ */
 
 /**
  * Given an error in any format, it extracts the message and inserts the code at the end.
@@ -139,7 +95,7 @@ const extractMessage = (error: any): string => {
  * @param code The error code to be wrapped and appended to the message.
  * @returns A string containing the encoded error message.
  */
-const encodeError = (error: any, code: IErrorCode): string =>
+export const encodeError = (error: any, code: IErrorCode): string =>
   `${extractMessage(error)}${wrapCode(code)}`;
 
 /**
@@ -148,7 +104,7 @@ const encodeError = (error: any, code: IErrorCode): string =>
  * @param error The error to be decoded, can be of any type.
  * @returns The decoded error, containing the message and the code.
  */
-const decodeError = (error: any): IDecodedError => {
+export const decodeError = (error: any): IDecodedError => {
   const encodedErrorMessage = extractMessage(error);
   const { code, startsAt } = unwrapCode(encodedErrorMessage);
   return {
@@ -162,11 +118,23 @@ const decodeError = (error: any): IDecodedError => {
  * @param error The error to be checked, can be of any type.
  * @returns A boolean indicating whether the error is an encoded error or not.
  */
-const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFAULT_CODE;
+export const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFAULT_CODE;
 
-/**------------------------------------------------------------------------------------------------
+/**
  * Misc helpers
- -------------------------------------------------------------------------------------------------*/
+ */
+
+/**
+ * Checks if the given error matches the specified error code.
+ * @param error The error to be checked, can be of any type.
+ * @param code The error code to check against.
+ * @returns A boolean indicating whether the error matches the specified code.
+ */
+export const hasErrorCode = (error: unknown, code: IErrorCode): boolean =>
+  error !== null &&
+  (error === code ||
+    (typeof error === 'object' && 'code' in error && error.code === code) ||
+    decodeError(error).code === code);
 
 /**
  * Verifies if a value matches the default error message used by this package.
@@ -174,27 +142,10 @@ const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFA
  * @param fullMatch Whether to check for an exact match or a partial match.
  * @returns A boolean indicating whether the value matches the default error message.
  */
-const isDefaultErrorMessage = (value: string, fullMatch: boolean = false): value is string =>
+export const isDefaultErrorMessage = (
+  value: string,
+  fullMatch: boolean = false,
+): value is string =>
   fullMatch
     ? value === DEFAULT_MESSAGE
     : typeof value === 'string' && value.includes(DEFAULT_MESSAGE);
-
-/* ************************************************************************************************
- *                                        MODULE EXPORTS                                          *
- ************************************************************************************************ */
-export {
-  // types
-  type IErrorCode,
-  type IDecodedError,
-
-  // error message extraction
-  extractMessage,
-
-  // encoding
-  encodeError,
-  decodeError,
-  isEncodedError,
-
-  // misc helpers
-  isDefaultErrorMessage,
-};
