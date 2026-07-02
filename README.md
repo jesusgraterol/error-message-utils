@@ -96,7 +96,7 @@ z.object({
 Identify encoded errors:
 
 ```typescript
-import { isEncodedError, encodeError } from 'error-message-utils';
+import { isEncodedError, encodeError, hasErrorCode } from 'error-message-utils';
 
 isEncodedError('Some random unencoded error');
 // false
@@ -108,6 +108,13 @@ isEncodedError(encodeError('Some unknown error.', 'NASTY_ERROR'));
 // true
 
 isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
+// true
+
+hasErrorCode(new Error('Oops, something went wrong.'), 'MY_ERROR_CODE'); // false
+hasErrorCode(
+  new Exception('Oops, something went wrong.', 'MY_ERROR_CODE'), 
+  'MY_ERROR_CODE'
+); 
 // true
 ```
 

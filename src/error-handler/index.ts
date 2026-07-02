@@ -124,7 +124,13 @@ export const isEncodedError = (error: any): boolean => decodeError(error).code !
  * Misc helpers
  */
 
-export const isErrorCode = (error: unknown, code: IErrorCode): boolean =>
+/**
+ * Checks if the given error matches the specified error code.
+ * @param error The error to be checked, can be of any type.
+ * @param code The error code to check against.
+ * @returns A boolean indicating whether the error matches the specified code.
+ */
+export const hasErrorCode = (error: unknown, code: IErrorCode): boolean =>
   error !== null &&
   (error === code ||
     (typeof error === 'object' && 'code' in error && error.code === code) ||
