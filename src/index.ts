@@ -8,6 +8,7 @@ export {
   encodeError,
   decodeError,
   isEncodedError,
+  getErrorCode,
   hasErrorCode,
   isDefaultErrorMessage,
 } from './error-handler/index.js';

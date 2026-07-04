@@ -9,6 +9,7 @@ import {
   encodeError,
   decodeError,
   isEncodedError,
+  getErrorCode,
   hasErrorCode,
 } from './index.js';
 
@@ -455,6 +456,56 @@ describe('isEncodedError', () => {
   test('can identify an encoded error from an error instance', () => {
     expect(isEncodedError(new Error(encodeError('There was an error.', 100)))).toBe(true);
     expect(isEncodedError(new Error('There was an error.'))).toBe(false);
+  });
+});
+
+describe('getErrorCode', () => {
+  test('returns the decoded code from encoded errors', () => {
+    const encodedErrorMessage = encodeError('There was an error.', 'INVALID_INPUT');
+
+    expect(getErrorCode(encodedErrorMessage)).toBe('INVALID_INPUT');
+    expect(getErrorCode(new Error(encodedErrorMessage))).toBe('INVALID_INPUT');
+    expect(getErrorCode({ message: encodedErrorMessage })).toBe('INVALID_INPUT');
+    expect(getErrorCode(encodeError('There was an error.', 100))).toBe(100);
+    expect(getErrorCode(encodeError('There was an error.', 0))).toBe(0);
+  });
+
+  test('returns object-carried codes when the message is not encoded', () => {
+    expect(getErrorCode({ code: 'INVALID_INPUT', message: 'There was an error.' })).toBe(
+      'INVALID_INPUT',
+    );
+    expect(getErrorCode({ code: 100, message: 'There was an error.' })).toBe(100);
+    expect(getErrorCode({ code: '0', message: 'There was an error.' })).toBe('0');
+    expect(getErrorCode({ code: 0, message: 'There was an error.' })).toBe(0);
+  });
+
+  test('prefers encoded message codes over object-carried codes', () => {
+    expect(
+      getErrorCode({
+        code: 'OUTER_CODE',
+        message: encodeError('There was an error.', 'INNER_CODE'),
+      }),
+    ).toBe('INNER_CODE');
+  });
+
+  test('returns the resolved code from Exception instances', () => {
+    const sourceException = new Exception('There was an error.', 'INVALID_INPUT');
+    const wrappedException = new Exception(sourceException);
+
+    expect(getErrorCode(sourceException)).toBe('INVALID_INPUT');
+    expect(getErrorCode(wrappedException)).toBe('INVALID_INPUT');
+    expect(getErrorCode(new Exception(encodeError('There was an error.', 100)))).toBe(100);
+  });
+
+  test('returns null when no non-default code can be resolved', () => {
+    expect(getErrorCode(null)).toBeNull();
+    expect(getErrorCode(undefined)).toBeNull();
+    expect(getErrorCode('There was an error.')).toBeNull();
+    expect(getErrorCode(new Error('There was an error.'))).toBeNull();
+    expect(getErrorCode({ message: 'There was an error.' })).toBeNull();
+    expect(getErrorCode({ code: null, message: 'There was an error.' })).toBeNull();
+    expect(getErrorCode(encodeError('There was an error.', DEFAULT_CODE))).toBeNull();
+    expect(getErrorCode(new Exception('There was an error.'))).toBeNull();
   });
 });
 

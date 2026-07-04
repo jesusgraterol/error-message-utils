@@ -142,6 +142,16 @@ export const decodeError = (error: any): IDecodedError => {
 export const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFAULT_CODE;
 
 /**
+ * Retrieves the error code from a given error, or null if it matches the default code.
+ * @param error The error to extract the code from.
+ * @returns The error code or null if it matches the default code.
+ */
+export const getErrorCode = (error: any): IErrorCode | null => {
+  const { code } = decodeError(error);
+  return code !== DEFAULT_CODE ? code : null;
+};
+
+/**
  * Checks if the given error matches the specified error code.
  * @param error The error to be checked, can be of any type.
  * @param code The error code to check against.
