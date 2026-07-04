@@ -36,3 +36,13 @@ export type IDecodedError = {
   message: string;
   code: IErrorCode;
 };
+
+/**
+ * Error Code Carrier
+ * An object that carries an error code, typically used to identify errors programmatically. Extra
+ * fields are allowed because provider and application errors often carry metadata.
+ */
+export type IErrorCodeCarrier = {
+  code: IErrorCode;
+  message: string;
+} & Record<string, unknown>;

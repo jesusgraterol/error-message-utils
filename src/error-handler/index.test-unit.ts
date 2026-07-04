@@ -9,6 +9,7 @@ import {
   encodeError,
   decodeError,
   isEncodedError,
+  isErrorCodeCarrier,
   hasErrorCode,
 } from './index.js';
 
@@ -306,6 +307,35 @@ describe('isEncodedError', () => {
   test('can identify an encoded error from an error instance', () => {
     expect(isEncodedError(new Error(encodeError('There was an error.', 100)))).toBe(true);
     expect(isEncodedError(new Error('There was an error.'))).toBe(false);
+  });
+});
+
+describe('isErrorCodeCarrier', () => {
+  test('identifies objects with string or numeric error codes', () => {
+    expect(isErrorCodeCarrier({ code: 'INVALID_INPUT' })).toBe(true);
+    expect(isErrorCodeCarrier({ code: 100 })).toBe(true);
+    expect(
+      isErrorCodeCarrier({
+        code: 'INVALID_INPUT',
+        message: 'There was an error.',
+        metadata: { field: 'email' },
+      }),
+    ).toBe(true);
+    expect(isErrorCodeCarrier(new Exception('There was an error.', 'INVALID_INPUT'))).toBe(true);
+  });
+
+  test('rejects values without a valid error code', () => {
+    expect(isErrorCodeCarrier(null)).toBe(false);
+    expect(isErrorCodeCarrier(undefined)).toBe(false);
+    expect(isErrorCodeCarrier('INVALID_INPUT')).toBe(false);
+    expect(isErrorCodeCarrier(100)).toBe(false);
+    expect(isErrorCodeCarrier(false)).toBe(false);
+    expect(isErrorCodeCarrier({})).toBe(false);
+    expect(isErrorCodeCarrier({ message: 'There was an error.' })).toBe(false);
+    expect(isErrorCodeCarrier({ code: null })).toBe(false);
+    expect(isErrorCodeCarrier({ code: true })).toBe(false);
+    expect(isErrorCodeCarrier({ code: { value: 'INVALID_INPUT' } })).toBe(false);
+    expect(isErrorCodeCarrier({ code: ['INVALID_INPUT'] })).toBe(false);
   });
 });
 
