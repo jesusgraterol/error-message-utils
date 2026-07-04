@@ -96,7 +96,7 @@ z.object({
 Identify encoded errors:
 
 ```typescript
-import { isEncodedError, encodeError, hasErrorCode } from 'error-message-utils';
+import { isEncodedError, encodeError, isErrorCodeCarrier, hasErrorCode } from 'error-message-utils';
 
 isEncodedError('Some random unencoded error');
 // false
@@ -110,12 +110,14 @@ isEncodedError(encodeError('Some unknown error.', 'NASTY_ERROR'));
 isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
 // true
 
-hasErrorCode(new Error('Oops, something went wrong.'), 'MY_ERROR_CODE'); // false
-hasErrorCode(
-  new Exception('Oops, something went wrong.', 'MY_ERROR_CODE'), 
-  'MY_ERROR_CODE'
-); 
-// true
+const error = new Error('Oops, something went wrong.');
+const exception = new Exception('Oops, something went wrong.', 'MY_ERROR_CODE');
+
+isErrorCodeCarrier(error); // false
+hasErrorCode(error, 'MY_ERROR_CODE'); // false
+
+isErrorCodeCarrier(exception); // true
+hasErrorCode(exception, 'MY_ERROR_CODE'); // true
 ```
 
 
@@ -192,6 +194,15 @@ type IExceptionRecord = {
   code: IErrorCode;
   data: unknown | null;
 };
+
+/**
+ * Error Code Carrier
+ * An object that carries an error code, typically used to identify errors programmatically.
+ */
+type IErrorCodeCarrier = {
+  code: IErrorCode;
+  message: string;
+} & Record<string, unknown>;
 ```
 
 

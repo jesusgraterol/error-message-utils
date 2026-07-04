@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { ZodError } from 'zod';
 
-import { IErrorCode, IDecodedError } from '../shared/types.js';
+import type { IErrorCode, IDecodedError, IErrorCodeCarrier } from '../shared/types.js';
 import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { wrapCode, unwrapCode } from '../utils/index.js';
 import { extractZodErrorMessage } from './utilities.js';
@@ -125,6 +125,17 @@ export const isEncodedError = (error: any): boolean => decodeError(error).code !
  */
 
 /**
+ * Determines whether an unknown value has an inspectable error code property.
+ * @param error The unknown value to inspect.
+ * @returns True when the value can carry an Exception-style code.
+ */
+export const isErrorCodeCarrier = (error: unknown): error is IErrorCodeCarrier =>
+  typeof error === 'object' &&
+  error !== null &&
+  'code' in error &&
+  (typeof error.code === 'string' || typeof error.code === 'number');
+
+/**
  * Checks if the given error matches the specified error code.
  * @param error The error to be checked, can be of any type.
  * @param code The error code to check against.
@@ -133,7 +144,7 @@ export const isEncodedError = (error: any): boolean => decodeError(error).code !
 export const hasErrorCode = (error: unknown, code: IErrorCode): boolean =>
   error !== null &&
   (error === code ||
-    (typeof error === 'object' && 'code' in error && error.code === code) ||
+    (isErrorCodeCarrier(error) && error.code === code) ||
     decodeError(error).code === code);
 
 /**

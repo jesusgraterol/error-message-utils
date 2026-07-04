@@ -1,5 +1,5 @@
 // shared
-export { IErrorCode, IDecodedError } from './shared/types.js';
+export { IErrorCode, IDecodedError, IErrorCodeCarrier } from './shared/types.js';
 export { DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
 
 // error handler
@@ -8,6 +8,7 @@ export {
   encodeError,
   decodeError,
   isEncodedError,
+  isErrorCodeCarrier,
   hasErrorCode,
   isDefaultErrorMessage,
 } from './error-handler/index.js';
