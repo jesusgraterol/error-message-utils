@@ -1,13 +1,15 @@
 import { describe, expect, test } from '@jest/globals';
 
 import { encodeError } from '../error-handler/index.js';
-import { DEFAULT_CODE } from '../shared/constants.js';
+import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { Exception } from './exception.js';
 
 describe('Exception', () => {
   test('creates an instance of Exception with the provided message and code', () => {
     const exception = new Exception('An error occurred', 'ERROR_CODE');
+    expect(exception).toBeInstanceOf(Error);
     expect(exception).toBeInstanceOf(Exception);
+    expect(exception).not.toBeInstanceOf(SyntaxError);
     expect(exception.message).toBe('An error occurred');
     expect(exception.code).toBe('ERROR_CODE');
   });
@@ -31,6 +33,40 @@ describe('Exception', () => {
     expect(exception.message).toBe('An error occurred');
     expect(exception.code).toBe('ERROR_CODE');
     expect(exception.toString()).toBe(encodedMessage);
+  });
+
+  test('can be instantiated from another Exception instance', () => {
+    const originalExceptionData = {
+      requestId: 'request-1',
+    };
+    const originalException = new Exception(
+      'request failed',
+      'REQUEST_FAILED',
+      originalExceptionData,
+    );
+    const exception = new Exception(originalException);
+
+    expect(exception).toBeInstanceOf(Exception);
+    expect(exception).not.toBe(originalException);
+    expect(exception.message).toBe('request failed');
+    expect(exception.code).toBe('REQUEST_FAILED');
+    expect(exception.data).toStrictEqual(originalExceptionData);
+    expect(exception.toString()).toBe(originalException.toString());
+  });
+
+  test('can wrap an Exception instance with an overridden code and data', () => {
+    const originalException = new Exception('token expired', 'TOKEN_EXPIRED', {
+      tokenId: 'token-1',
+    });
+    const exceptionData = {
+      sessionId: 'session-1',
+    };
+    const exception = new Exception(originalException, 'SESSION_EXPIRED', exceptionData);
+
+    expect(exception.message).toBe('token expired');
+    expect(exception.code).toBe('SESSION_EXPIRED');
+    expect(exception.data).toStrictEqual(exceptionData);
+    expect(exception.toString()).toBe(encodeError('token expired', 'SESSION_EXPIRED'));
   });
 
   test('the provided code overrides the decoded code', () => {
@@ -60,6 +96,71 @@ describe('Exception', () => {
 
     expect(exception.message).toBe('response payload is invalid');
     expect(exception.code).toBe('INVALID_RESPONSE_DATA');
+  });
+
+  test('uses an object-carried code when no encoded code exists', () => {
+    const exceptionData = {
+      requestId: 'request-1',
+    };
+    const exception = new Exception({
+      code: 'PROVIDER_REQUEST_FAILED',
+      data: exceptionData,
+      message: 'provider request failed',
+      provider: 'example-provider',
+    });
+
+    expect(exception.message).toBe('provider request failed');
+    expect(exception.code).toBe('PROVIDER_REQUEST_FAILED');
+    expect(exception.data).toStrictEqual(exceptionData);
+  });
+
+  test('uses an Error-carried code when no encoded code exists', () => {
+    const exceptionData = {
+      requestId: 'request-1',
+    };
+    const providerError = Object.assign(new Error('provider request failed'), {
+      code: 'PROVIDER_REQUEST_FAILED',
+      data: exceptionData,
+      statusCode: 502,
+    });
+    const exception = new Exception(providerError);
+
+    expect(exception.message).toBe('provider request failed');
+    expect(exception.code).toBe('PROVIDER_REQUEST_FAILED');
+    expect(exception.data).toStrictEqual(exceptionData);
+  });
+
+  test('prefers the encoded message code over an object-carried code', () => {
+    const exception = new Exception({
+      code: 'OUTER_CODE',
+      message: encodeError('request failed', 'INNER_CODE'),
+    });
+
+    expect(exception.message).toBe('request failed');
+    expect(exception.code).toBe('INNER_CODE');
+  });
+
+  test('ignores malformed object-carried codes', () => {
+    const exception = new Exception({
+      code: null,
+      message: 'request failed',
+    });
+
+    expect(exception.message).toBe('request failed');
+    expect(exception.code).toBe(DEFAULT_CODE);
+  });
+
+  test('uses default values for invalid constructor input', () => {
+    const exception = new Exception(undefined);
+
+    expect(exception.message).toBe(DEFAULT_MESSAGE);
+    expect(exception.code).toBe(DEFAULT_CODE);
+    expect(exception.data).toBeNull();
+    expect(exception.toRecord()).toStrictEqual({
+      message: DEFAULT_MESSAGE,
+      code: DEFAULT_CODE,
+      data: null,
+    });
   });
 
   test('returns the encoded error string from toString()', () => {
@@ -113,6 +214,55 @@ describe('Exception', () => {
     expect(exception.data).toStrictEqual(exceptionData);
   });
 
+  test('prefers constructor data over decoded data', () => {
+    const decodedExceptionData = {
+      requestId: 'decoded-request',
+    };
+    const constructorExceptionData = {
+      requestId: 'constructor-request',
+    };
+    const sourceException = new Exception(
+      'request failed',
+      'REQUEST_FAILED',
+      decodedExceptionData,
+    );
+    const exception = new Exception(sourceException, undefined, constructorExceptionData);
+
+    expect(exception.message).toBe('request failed');
+    expect(exception.code).toBe('REQUEST_FAILED');
+    expect(exception.data).toStrictEqual(constructorExceptionData);
+  });
+
+  test('preserves explicit null constructor data over decoded data', () => {
+    const sourceException = new Exception('request failed', 'REQUEST_FAILED', {
+      requestId: 'decoded-request',
+    });
+    const exception = new Exception(sourceException, undefined, null);
+
+    expect(exception.message).toBe('request failed');
+    expect(exception.code).toBe('REQUEST_FAILED');
+    expect(exception.data).toBeNull();
+  });
+
+  test.each([
+    ['false', false],
+    ['zero', 0],
+    ['empty string', ''],
+  ])('uses decoded %s data when constructor data is omitted', (_, decodedExceptionData) => {
+    const exception = new Exception({
+      code: 'FEATURE_DISABLED',
+      data: decodedExceptionData,
+      message: 'feature disabled',
+    });
+
+    expect(exception.data).toBe(decodedExceptionData);
+    expect(exception.toRecord()).toStrictEqual({
+      message: 'feature disabled',
+      code: 'FEATURE_DISABLED',
+      data: decodedExceptionData,
+    });
+  });
+
   test('converts the exception to a record', () => {
     const exceptionData = {
       requestId: 'request-1',
@@ -130,7 +280,7 @@ describe('Exception', () => {
   test('uses null data in the record when no exception data is provided', () => {
     const exception = new Exception('service unavailable', 'SERVICE_UNAVAILABLE');
 
-    expect(exception.data).toBeUndefined();
+    expect(exception.data).toBeNull();
     expect(exception.toRecord()).toStrictEqual({
       message: 'service unavailable',
       code: 'SERVICE_UNAVAILABLE',
@@ -138,13 +288,17 @@ describe('Exception', () => {
     });
   });
 
-  test('preserves defined falsy exception data in the record', () => {
-    const exception = new Exception('feature disabled', 'FEATURE_DISABLED', false);
+  test.each([
+    ['false', false],
+    ['zero', 0],
+    ['empty string', ''],
+  ])('preserves %s exception data in the record', (_, exceptionData) => {
+    const exception = new Exception('feature disabled', 'FEATURE_DISABLED', exceptionData);
 
     expect(exception.toRecord()).toStrictEqual({
       message: 'feature disabled',
       code: 'FEATURE_DISABLED',
-      data: false,
+      data: exceptionData,
     });
   });
 
@@ -158,6 +312,18 @@ describe('Exception', () => {
     expect(exception.code).toBe(-1);
     expect(exception.toString()).toBe(
       encodeError('database connection failed; [CAUSE]: network timeout', -1),
+    );
+  });
+
+  test('handles Exception instances nested in an Error cause chain', () => {
+    const cause = new Exception('provider request failed', 'PROVIDER_REQUEST_FAILED');
+    const errorWithCause = new Error('request failed', { cause });
+    const exception = new Exception(errorWithCause, 'REQUEST_FAILED');
+
+    expect(exception.message).toBe('request failed; [CAUSE]: provider request failed');
+    expect(exception.code).toBe('REQUEST_FAILED');
+    expect(exception.toString()).toBe(
+      encodeError('request failed; [CAUSE]: provider request failed', 'REQUEST_FAILED'),
     );
   });
 

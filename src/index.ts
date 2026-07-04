@@ -8,7 +8,6 @@ export {
   encodeError,
   decodeError,
   isEncodedError,
-  isErrorCodeCarrier,
   hasErrorCode,
   isDefaultErrorMessage,
 } from './error-handler/index.js';

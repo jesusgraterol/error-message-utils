@@ -19,7 +19,7 @@ export class Exception extends Error {
     // init props
     this.name = 'Exception';
     this.code = code ?? decodedError.code;
-    this.data = data;
+    this.data = data === undefined ? decodedError.data : data;
   }
 
   /**

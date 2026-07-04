@@ -35,6 +35,7 @@ export type IUnwrappedErrorCode = {
 export type IDecodedError = {
   message: string;
   code: IErrorCode;
+  data: unknown | null;
 };
 
 /**
@@ -44,5 +45,4 @@ export type IDecodedError = {
  */
 export type IErrorCodeCarrier = {
   code: IErrorCode;
-  message: string;
 } & Record<string, unknown>;

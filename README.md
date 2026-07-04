@@ -42,7 +42,8 @@ import { decodeError } from 'error-message-utils';
 decodeError('The provided email is already in use.{(EMAIL_EXISTS)}');
 // {
 //   message: 'The provided email is already in use.',
-//   code: 'EMAIL_EXISTS'
+//   code: 'EMAIL_EXISTS',
+//   data: null
 // }
 ```
 
@@ -96,7 +97,7 @@ z.object({
 Identify encoded errors:
 
 ```typescript
-import { isEncodedError, encodeError, isErrorCodeCarrier, hasErrorCode } from 'error-message-utils';
+import { isEncodedError, encodeError, hasErrorCode } from 'error-message-utils';
 
 isEncodedError('Some random unencoded error');
 // false
@@ -113,10 +114,8 @@ isEncodedError(encodeError(new Error('Some unknown error.'), 'NASTY_ERROR'));
 const error = new Error('Oops, something went wrong.');
 const exception = new Exception('Oops, something went wrong.', 'MY_ERROR_CODE');
 
-isErrorCodeCarrier(error); // false
 hasErrorCode(error, 'MY_ERROR_CODE'); // false
 
-isErrorCodeCarrier(exception); // true
 hasErrorCode(exception, 'MY_ERROR_CODE'); // true
 ```
 
@@ -183,6 +182,7 @@ type IErrorCode = string | number;
 type IDecodedError = {
   message: string,
   code: IErrorCode,
+  data: unknown | null,
 };
 
 /**
@@ -197,11 +197,11 @@ type IExceptionRecord = {
 
 /**
  * Error Code Carrier
- * An object that carries an error code, typically used to identify errors programmatically.
+ * An object that carries an error code, typically used to identify errors programmatically. Extra
+ * fields are allowed because provider and application errors often carry metadata.
  */
 type IErrorCodeCarrier = {
   code: IErrorCode;
-  message: string;
 } & Record<string, unknown>;
 ```
 

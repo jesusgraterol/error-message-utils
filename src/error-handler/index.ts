@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
 import { ZodError } from 'zod';
 
-import type { IErrorCode, IDecodedError, IErrorCodeCarrier } from '../shared/types.js';
+import type { IErrorCode, IDecodedError } from '../shared/types.js';
 import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { wrapCode, unwrapCode } from '../utils/index.js';
-import { extractZodErrorMessage } from './utilities.js';
+import { extractZodErrorMessage, getDecodedErrorCode } from './utilities.js';
 
 /**
  * General errors
@@ -109,9 +109,14 @@ export const decodeError = (error: any): IDecodedError => {
   const { code, startsAt } = unwrapCode(encodedErrorMessage);
   return {
     message: startsAt > 0 ? encodedErrorMessage.slice(0, startsAt) : encodedErrorMessage,
-    code,
+    code: getDecodedErrorCode(error, code),
+    data: error !== null && typeof error === 'object' && 'data' in error ? error.data : null,
   };
 };
+
+/**
+ * Misc helpers
+ */
 
 /**
  * Determines if a given error (in any format) is an error encoded by this package.
@@ -121,31 +126,13 @@ export const decodeError = (error: any): IDecodedError => {
 export const isEncodedError = (error: any): boolean => decodeError(error).code !== DEFAULT_CODE;
 
 /**
- * Misc helpers
- */
-
-/**
- * Determines whether an unknown value has an inspectable error code property.
- * @param error The unknown value to inspect.
- * @returns True when the value can carry an Exception-style code.
- */
-export const isErrorCodeCarrier = (error: unknown): error is IErrorCodeCarrier =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  (typeof error.code === 'string' || typeof error.code === 'number');
-
-/**
  * Checks if the given error matches the specified error code.
  * @param error The error to be checked, can be of any type.
  * @param code The error code to check against.
  * @returns A boolean indicating whether the error matches the specified code.
  */
 export const hasErrorCode = (error: unknown, code: IErrorCode): boolean =>
-  error !== null &&
-  (error === code ||
-    (isErrorCodeCarrier(error) && error.code === code) ||
-    decodeError(error).code === code);
+  error !== null && (error === code || decodeError(error).code === code);
 
 /**
  * Verifies if a value matches the default error message used by this package.

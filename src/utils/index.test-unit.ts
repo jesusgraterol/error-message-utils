@@ -59,6 +59,10 @@ describe('unwrapCode', () => {
       code: DEFAULT_CODE,
       startsAt: -1,
     });
+    expect(unwrapCode(JSON.stringify({ code: 'INVALID_INPUT' }))).toStrictEqual({
+      code: DEFAULT_CODE,
+      startsAt: -1,
+    });
   });
 
   test('for the code to be unwrapped, it must be a the very end of the error message', () => {

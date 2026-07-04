@@ -9,7 +9,6 @@ import {
   encodeError,
   decodeError,
   isEncodedError,
-  isErrorCodeCarrier,
   hasErrorCode,
 } from './index.js';
 
@@ -219,12 +218,14 @@ describe('decodeError', () => {
     expect(decodeError(encodeError('There was an error.', 100))).toStrictEqual({
       message: 'There was an error.',
       code: 100,
+      data: null,
     });
     expect(
       decodeError(encodeError(new Error('There was a nasty error.'), 'DB_ERROR')),
     ).toStrictEqual({
       message: 'There was a nasty error.',
       code: 'DB_ERROR',
+      data: null,
     });
   });
 
@@ -237,10 +238,12 @@ describe('decodeError', () => {
     expect(decodeError(encodeError(error, 100))).toStrictEqual({
       message: 'Top level error.; [CAUSE]: First nested cause.; [CAUSE]: Second nested cause.',
       code: 100,
+      data: null,
     });
     expect(decodeError(encodeError(error, 'UNKNOWN_AUTH_ERROR'))).toStrictEqual({
       message: 'Top level error.; [CAUSE]: First nested cause.; [CAUSE]: Second nested cause.',
       code: 'UNKNOWN_AUTH_ERROR',
+      data: null,
     });
   });
 
@@ -248,10 +251,98 @@ describe('decodeError', () => {
     expect(decodeError('There was an error.')).toStrictEqual({
       message: 'There was an error.',
       code: DEFAULT_CODE,
+      data: null,
     });
     expect(decodeError('There was an error{(100)}.')).toStrictEqual({
       message: 'There was an error{(100)}.',
       code: DEFAULT_CODE,
+      data: null,
+    });
+  });
+
+  test('can decode object and Error instances that carry a code', () => {
+    const decodedData = {
+      requestId: 'request-1',
+    };
+    const providerData = {
+      requestId: 'provider-request',
+    };
+    const providerError = Object.assign(new Error('Provider request failed.'), {
+      code: 'PROVIDER_REQUEST_FAILED',
+      data: providerData,
+      statusCode: 502,
+    });
+
+    expect(
+      decodeError({
+        code: 'INVALID_INPUT',
+        data: decodedData,
+        message: 'There was an error.',
+      }),
+    ).toStrictEqual({
+      message: 'There was an error.',
+      code: 'INVALID_INPUT',
+      data: decodedData,
+    });
+    expect(decodeError(providerError)).toStrictEqual({
+      message: 'Provider request failed.',
+      code: 'PROVIDER_REQUEST_FAILED',
+      data: providerData,
+    });
+  });
+
+  test('prefers the encoded message code over an object-carried code', () => {
+    const decodedData = {
+      requestId: 'request-1',
+    };
+
+    expect(
+      decodeError({
+        code: 'OUTER_CODE',
+        data: decodedData,
+        message: encodeError('There was an error.', 'INNER_CODE'),
+      }),
+    ).toStrictEqual({
+      message: 'There was an error.',
+      code: 'INNER_CODE',
+      data: decodedData,
+    });
+  });
+
+  test.each([
+    ['false', false],
+    ['zero', 0],
+    ['empty string', ''],
+  ])('can decode %s data from object errors', (_, decodedData) => {
+    expect(
+      decodeError({
+        code: 'FEATURE_DISABLED',
+        data: decodedData,
+        message: 'feature disabled',
+      }),
+    ).toStrictEqual({
+      message: 'feature disabled',
+      code: 'FEATURE_DISABLED',
+      data: decodedData,
+    });
+  });
+
+  test('can decode Exception instances and preserve their resolved code', () => {
+    const exceptionData = {
+      requestId: 'request-1',
+    };
+    const sourceException = new Exception('There was an error.', 'SOURCE_CODE', exceptionData);
+    const wrappedException = new Exception(sourceException);
+
+    expect(decodeError(sourceException)).toStrictEqual({
+      message: 'There was an error.',
+      code: 'SOURCE_CODE',
+      data: exceptionData,
+    });
+    expect(decodeError(wrappedException)).toStrictEqual({
+      message: 'There was an error.',
+      code: 'SOURCE_CODE',
+      data: exceptionData,
     });
   });
 
@@ -266,6 +357,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error within an This is a nested error${wrapCode('INVALID')}`,
       code: 'CORRECT_ERROR',
+      data: null,
     });
     expect(
       decodeError(
@@ -274,6 +366,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error within a nested ${CODE_WRAPPER.prefix}`,
       code: 'CORRECT_ERROR',
+      data: null,
     });
     expect(
       decodeError(
@@ -282,6 +375,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error within a nested ${CODE_WRAPPER.suffix}`,
       code: 'CORRECT_ERROR',
+      data: null,
     });
     expect(
       decodeError(
@@ -293,6 +387,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`,
       code: 123456,
+      data: null,
     });
   });
 });
@@ -307,35 +402,6 @@ describe('isEncodedError', () => {
   test('can identify an encoded error from an error instance', () => {
     expect(isEncodedError(new Error(encodeError('There was an error.', 100)))).toBe(true);
     expect(isEncodedError(new Error('There was an error.'))).toBe(false);
-  });
-});
-
-describe('isErrorCodeCarrier', () => {
-  test('identifies objects with string or numeric error codes', () => {
-    expect(isErrorCodeCarrier({ code: 'INVALID_INPUT' })).toBe(true);
-    expect(isErrorCodeCarrier({ code: 100 })).toBe(true);
-    expect(
-      isErrorCodeCarrier({
-        code: 'INVALID_INPUT',
-        message: 'There was an error.',
-        metadata: { field: 'email' },
-      }),
-    ).toBe(true);
-    expect(isErrorCodeCarrier(new Exception('There was an error.', 'INVALID_INPUT'))).toBe(true);
-  });
-
-  test('rejects values without a valid error code', () => {
-    expect(isErrorCodeCarrier(null)).toBe(false);
-    expect(isErrorCodeCarrier(undefined)).toBe(false);
-    expect(isErrorCodeCarrier('INVALID_INPUT')).toBe(false);
-    expect(isErrorCodeCarrier(100)).toBe(false);
-    expect(isErrorCodeCarrier(false)).toBe(false);
-    expect(isErrorCodeCarrier({})).toBe(false);
-    expect(isErrorCodeCarrier({ message: 'There was an error.' })).toBe(false);
-    expect(isErrorCodeCarrier({ code: null })).toBe(false);
-    expect(isErrorCodeCarrier({ code: true })).toBe(false);
-    expect(isErrorCodeCarrier({ code: { value: 'INVALID_INPUT' } })).toBe(false);
-    expect(isErrorCodeCarrier({ code: ['INVALID_INPUT'] })).toBe(false);
   });
 });
 
@@ -379,14 +445,30 @@ describe('hasErrorCode', () => {
   });
 
   test('matches Exception instances by their resolved code', () => {
+    const sourceException = new Exception('There was an error.', 'INVALID_INPUT');
+    const wrappedException = new Exception(sourceException);
+
     expect(
-      hasErrorCode(new Exception('There was an error.', 'INVALID_INPUT'), 'INVALID_INPUT'),
+      hasErrorCode(sourceException, 'INVALID_INPUT'),
     ).toBe(true);
+    expect(hasErrorCode(wrappedException, 'INVALID_INPUT')).toBe(true);
     expect(hasErrorCode(new Exception(encodeError('There was an error.', 100)), 100)).toBe(true);
     expect(hasErrorCode(new Exception('There was an error.'), DEFAULT_CODE)).toBe(true);
     expect(hasErrorCode(new Exception('There was an error.', 'INVALID_INPUT'), 'OTHER_CODE')).toBe(
       false,
     );
+  });
+
+  test('does not match malformed object-carried codes', () => {
+    expect(hasErrorCode({ code: null, message: 'There was an error.' }, 'INVALID_INPUT')).toBe(
+      false,
+    );
+    expect(hasErrorCode({ code: false, message: 'There was an error.' }, 'INVALID_INPUT')).toBe(
+      false,
+    );
+    expect(
+      hasErrorCode({ code: ['INVALID_INPUT'], message: 'There was an error.' }, 'INVALID_INPUT'),
+    ).toBe(false);
   });
 
   test('does not match missing, malformed, or different non-default codes', () => {
