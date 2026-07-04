@@ -1,4 +1,4 @@
-import { describe, test, expect } from '@jest/globals';
+import { afterEach, describe, jest, test, expect } from '@jest/globals';
 import { z } from 'zod';
 import { Exception } from '../exception/index.js';
 import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
@@ -9,7 +9,7 @@ import {
   encodeError,
   decodeError,
   isEncodedError,
-  isErrorCodeCarrier,
+  getErrorCode,
   hasErrorCode,
 } from './index.js';
 
@@ -18,6 +18,10 @@ import {
  ************************************************************************************************ */
 
 describe('extractMessage', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('returns the default error msg if an invalid value is provided', () => {
     // @ts-ignore
     expect(extractMessage()).toBe(DEFAULT_MESSAGE);
@@ -85,6 +89,14 @@ describe('extractMessage', () => {
     ).toBe('Top level error; [CAUSE]: First nested cause; [CAUSE]: Second nested cause');
   });
 
+  test('returns the default message for circular Error cause references', () => {
+    const error = new Error('Top level error');
+
+    error.cause = error;
+
+    expect(extractMessage(error)).toBe(`Top level error; [CAUSE]: ${DEFAULT_MESSAGE}`);
+  });
+
   test('returns a stringified version of the error if it cannot extract the message from an object', () => {
     expect(extractMessage(['some', 'weird', 'error'])).toBe(
       JSON.stringify(['some', 'weird', 'error']),
@@ -92,6 +104,16 @@ describe('extractMessage', () => {
     expect(extractMessage({ omg: 'no error keys!', foo: 'bar' })).toBe(
       JSON.stringify({ omg: 'no error keys!', foo: 'bar' }),
     );
+  });
+
+  test('returns the default message when fallback stringification fails', () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const error: Record<string, unknown> = {};
+
+    error.self = error;
+
+    expect(extractMessage(error)).toBe(DEFAULT_MESSAGE);
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
   });
 
   test('can extract a message from within an object', () => {
@@ -137,6 +159,26 @@ describe('extractMessage', () => {
     expect(
       extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } }),
     ).toBe('This error message is nested deeply!');
+  });
+
+  test.each([
+    'message',
+    'msg',
+    'error',
+    'err',
+    'errors',
+    'errs',
+    'reason',
+    'reasons',
+    'issue',
+    'issues',
+    'data',
+  ])('returns the default message for circular %s references', (errorKey) => {
+    const error: Record<string, unknown> = {};
+
+    error[errorKey] = error;
+
+    expect(extractMessage(error)).toBe(DEFAULT_MESSAGE);
   });
 
   test('can extract a message from ZodErrors', () => {
@@ -219,12 +261,14 @@ describe('decodeError', () => {
     expect(decodeError(encodeError('There was an error.', 100))).toStrictEqual({
       message: 'There was an error.',
       code: 100,
+      data: null,
     });
     expect(
       decodeError(encodeError(new Error('There was a nasty error.'), 'DB_ERROR')),
     ).toStrictEqual({
       message: 'There was a nasty error.',
       code: 'DB_ERROR',
+      data: null,
     });
   });
 
@@ -237,10 +281,12 @@ describe('decodeError', () => {
     expect(decodeError(encodeError(error, 100))).toStrictEqual({
       message: 'Top level error.; [CAUSE]: First nested cause.; [CAUSE]: Second nested cause.',
       code: 100,
+      data: null,
     });
     expect(decodeError(encodeError(error, 'UNKNOWN_AUTH_ERROR'))).toStrictEqual({
       message: 'Top level error.; [CAUSE]: First nested cause.; [CAUSE]: Second nested cause.',
       code: 'UNKNOWN_AUTH_ERROR',
+      data: null,
     });
   });
 
@@ -248,10 +294,109 @@ describe('decodeError', () => {
     expect(decodeError('There was an error.')).toStrictEqual({
       message: 'There was an error.',
       code: DEFAULT_CODE,
+      data: null,
     });
     expect(decodeError('There was an error{(100)}.')).toStrictEqual({
       message: 'There was an error{(100)}.',
       code: DEFAULT_CODE,
+      data: null,
+    });
+    expect(decodeError('There was an error{()}')).toStrictEqual({
+      message: 'There was an error{()}',
+      code: DEFAULT_CODE,
+      data: null,
+    });
+    expect(decodeError(encodeError('There was an error.', DEFAULT_CODE))).toStrictEqual({
+      message: 'There was an error.',
+      code: DEFAULT_CODE,
+      data: null,
+    });
+  });
+
+  test('can decode object and Error instances that carry a code', () => {
+    const decodedData = {
+      requestId: 'request-1',
+    };
+    const providerData = {
+      requestId: 'provider-request',
+    };
+    const providerError = Object.assign(new Error('Provider request failed.'), {
+      code: 'PROVIDER_REQUEST_FAILED',
+      data: providerData,
+      statusCode: 502,
+    });
+
+    expect(
+      decodeError({
+        code: 'INVALID_INPUT',
+        data: decodedData,
+        message: 'There was an error.',
+      }),
+    ).toStrictEqual({
+      message: 'There was an error.',
+      code: 'INVALID_INPUT',
+      data: decodedData,
+    });
+    expect(decodeError(providerError)).toStrictEqual({
+      message: 'Provider request failed.',
+      code: 'PROVIDER_REQUEST_FAILED',
+      data: providerData,
+    });
+  });
+
+  test('prefers the encoded message code over an object-carried code', () => {
+    const decodedData = {
+      requestId: 'request-1',
+    };
+
+    expect(
+      decodeError({
+        code: 'OUTER_CODE',
+        data: decodedData,
+        message: encodeError('There was an error.', 'INNER_CODE'),
+      }),
+    ).toStrictEqual({
+      message: 'There was an error.',
+      code: 'INNER_CODE',
+      data: decodedData,
+    });
+  });
+
+  test.each([
+    ['false', false],
+    ['zero', 0],
+    ['empty string', ''],
+    ['undefined', undefined],
+  ])('can decode %s data from object errors', (_, decodedData) => {
+    expect(
+      decodeError({
+        code: 'FEATURE_DISABLED',
+        data: decodedData,
+        message: 'feature disabled',
+      }),
+    ).toStrictEqual({
+      message: 'feature disabled',
+      code: 'FEATURE_DISABLED',
+      data: decodedData,
+    });
+  });
+
+  test('can decode Exception instances and preserve their resolved code', () => {
+    const exceptionData = {
+      requestId: 'request-1',
+    };
+    const sourceException = new Exception('There was an error.', 'SOURCE_CODE', exceptionData);
+    const wrappedException = new Exception(sourceException);
+
+    expect(decodeError(sourceException)).toStrictEqual({
+      message: 'There was an error.',
+      code: 'SOURCE_CODE',
+      data: exceptionData,
+    });
+    expect(decodeError(wrappedException)).toStrictEqual({
+      message: 'There was an error.',
+      code: 'SOURCE_CODE',
+      data: exceptionData,
     });
   });
 
@@ -266,6 +411,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error within an This is a nested error${wrapCode('INVALID')}`,
       code: 'CORRECT_ERROR',
+      data: null,
     });
     expect(
       decodeError(
@@ -274,6 +420,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error within a nested ${CODE_WRAPPER.prefix}`,
       code: 'CORRECT_ERROR',
+      data: null,
     });
     expect(
       decodeError(
@@ -282,6 +429,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error within a nested ${CODE_WRAPPER.suffix}`,
       code: 'CORRECT_ERROR',
+      data: null,
     });
     expect(
       decodeError(
@@ -293,6 +441,7 @@ describe('decodeError', () => {
     ).toStrictEqual({
       message: `This is an error ${CODE_WRAPPER.prefix}within a nested${CODE_WRAPPER.suffix}`,
       code: 123456,
+      data: null,
     });
   });
 });
@@ -310,32 +459,53 @@ describe('isEncodedError', () => {
   });
 });
 
-describe('isErrorCodeCarrier', () => {
-  test('identifies objects with string or numeric error codes', () => {
-    expect(isErrorCodeCarrier({ code: 'INVALID_INPUT' })).toBe(true);
-    expect(isErrorCodeCarrier({ code: 100 })).toBe(true);
-    expect(
-      isErrorCodeCarrier({
-        code: 'INVALID_INPUT',
-        message: 'There was an error.',
-        metadata: { field: 'email' },
-      }),
-    ).toBe(true);
-    expect(isErrorCodeCarrier(new Exception('There was an error.', 'INVALID_INPUT'))).toBe(true);
+describe('getErrorCode', () => {
+  test('returns the decoded code from encoded errors', () => {
+    const encodedErrorMessage = encodeError('There was an error.', 'INVALID_INPUT');
+
+    expect(getErrorCode(encodedErrorMessage)).toBe('INVALID_INPUT');
+    expect(getErrorCode(new Error(encodedErrorMessage))).toBe('INVALID_INPUT');
+    expect(getErrorCode({ message: encodedErrorMessage })).toBe('INVALID_INPUT');
+    expect(getErrorCode(encodeError('There was an error.', 100))).toBe(100);
+    expect(getErrorCode(encodeError('There was an error.', 0))).toBe(0);
   });
 
-  test('rejects values without a valid error code', () => {
-    expect(isErrorCodeCarrier(null)).toBe(false);
-    expect(isErrorCodeCarrier(undefined)).toBe(false);
-    expect(isErrorCodeCarrier('INVALID_INPUT')).toBe(false);
-    expect(isErrorCodeCarrier(100)).toBe(false);
-    expect(isErrorCodeCarrier(false)).toBe(false);
-    expect(isErrorCodeCarrier({})).toBe(false);
-    expect(isErrorCodeCarrier({ message: 'There was an error.' })).toBe(false);
-    expect(isErrorCodeCarrier({ code: null })).toBe(false);
-    expect(isErrorCodeCarrier({ code: true })).toBe(false);
-    expect(isErrorCodeCarrier({ code: { value: 'INVALID_INPUT' } })).toBe(false);
-    expect(isErrorCodeCarrier({ code: ['INVALID_INPUT'] })).toBe(false);
+  test('returns object-carried codes when the message is not encoded', () => {
+    expect(getErrorCode({ code: 'INVALID_INPUT', message: 'There was an error.' })).toBe(
+      'INVALID_INPUT',
+    );
+    expect(getErrorCode({ code: 100, message: 'There was an error.' })).toBe(100);
+    expect(getErrorCode({ code: '0', message: 'There was an error.' })).toBe('0');
+    expect(getErrorCode({ code: 0, message: 'There was an error.' })).toBe(0);
+  });
+
+  test('prefers encoded message codes over object-carried codes', () => {
+    expect(
+      getErrorCode({
+        code: 'OUTER_CODE',
+        message: encodeError('There was an error.', 'INNER_CODE'),
+      }),
+    ).toBe('INNER_CODE');
+  });
+
+  test('returns the resolved code from Exception instances', () => {
+    const sourceException = new Exception('There was an error.', 'INVALID_INPUT');
+    const wrappedException = new Exception(sourceException);
+
+    expect(getErrorCode(sourceException)).toBe('INVALID_INPUT');
+    expect(getErrorCode(wrappedException)).toBe('INVALID_INPUT');
+    expect(getErrorCode(new Exception(encodeError('There was an error.', 100)))).toBe(100);
+  });
+
+  test('returns null when no non-default code can be resolved', () => {
+    expect(getErrorCode(null)).toBeNull();
+    expect(getErrorCode(undefined)).toBeNull();
+    expect(getErrorCode('There was an error.')).toBeNull();
+    expect(getErrorCode(new Error('There was an error.'))).toBeNull();
+    expect(getErrorCode({ message: 'There was an error.' })).toBeNull();
+    expect(getErrorCode({ code: null, message: 'There was an error.' })).toBeNull();
+    expect(getErrorCode(encodeError('There was an error.', DEFAULT_CODE))).toBeNull();
+    expect(getErrorCode(new Exception('There was an error.'))).toBeNull();
   });
 });
 
@@ -379,14 +549,28 @@ describe('hasErrorCode', () => {
   });
 
   test('matches Exception instances by their resolved code', () => {
-    expect(
-      hasErrorCode(new Exception('There was an error.', 'INVALID_INPUT'), 'INVALID_INPUT'),
-    ).toBe(true);
+    const sourceException = new Exception('There was an error.', 'INVALID_INPUT');
+    const wrappedException = new Exception(sourceException);
+
+    expect(hasErrorCode(sourceException, 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCode(wrappedException, 'INVALID_INPUT')).toBe(true);
     expect(hasErrorCode(new Exception(encodeError('There was an error.', 100)), 100)).toBe(true);
     expect(hasErrorCode(new Exception('There was an error.'), DEFAULT_CODE)).toBe(true);
     expect(hasErrorCode(new Exception('There was an error.', 'INVALID_INPUT'), 'OTHER_CODE')).toBe(
       false,
     );
+  });
+
+  test('does not match malformed object-carried codes', () => {
+    expect(hasErrorCode({ code: null, message: 'There was an error.' }, 'INVALID_INPUT')).toBe(
+      false,
+    );
+    expect(hasErrorCode({ code: false, message: 'There was an error.' }, 'INVALID_INPUT')).toBe(
+      false,
+    );
+    expect(
+      hasErrorCode({ code: ['INVALID_INPUT'], message: 'There was an error.' }, 'INVALID_INPUT'),
+    ).toBe(false);
   });
 
   test('does not match missing, malformed, or different non-default codes', () => {

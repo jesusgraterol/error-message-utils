@@ -14,8 +14,13 @@ export const wrapCode = (code: IErrorCode): string =>
  * @param message The message to check.
  * @returns A boolean indicating whether the message is an encoded error or not.
  */
-const __isEncodedError = (message: string): boolean =>
-  new RegExp(`${CODE_WRAPPER.prefix}.+${CODE_WRAPPER.suffix}$`).test(message);
+const __isEncodedError = (message: string): boolean => {
+  const startsAt = message.lastIndexOf(CODE_WRAPPER.prefix);
+  const codeStartsAt = startsAt + CODE_WRAPPER.prefix.length;
+  const codeEndsAt = message.length - CODE_WRAPPER.suffix.length;
+
+  return startsAt >= 0 && codeStartsAt < codeEndsAt && message.endsWith(CODE_WRAPPER.suffix);
+};
 
 /**
  * Verifies if a given string is numeric.
