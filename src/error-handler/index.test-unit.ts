@@ -1,4 +1,4 @@
-import { describe, test, expect } from '@jest/globals';
+import { afterEach, describe, jest, test, expect } from '@jest/globals';
 import { z } from 'zod';
 import { Exception } from '../exception/index.js';
 import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
@@ -17,6 +17,10 @@ import {
  ************************************************************************************************ */
 
 describe('extractMessage', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('returns the default error msg if an invalid value is provided', () => {
     // @ts-ignore
     expect(extractMessage()).toBe(DEFAULT_MESSAGE);
@@ -84,6 +88,14 @@ describe('extractMessage', () => {
     ).toBe('Top level error; [CAUSE]: First nested cause; [CAUSE]: Second nested cause');
   });
 
+  test('returns the default message for circular Error cause references', () => {
+    const error = new Error('Top level error');
+
+    error.cause = error;
+
+    expect(extractMessage(error)).toBe(`Top level error; [CAUSE]: ${DEFAULT_MESSAGE}`);
+  });
+
   test('returns a stringified version of the error if it cannot extract the message from an object', () => {
     expect(extractMessage(['some', 'weird', 'error'])).toBe(
       JSON.stringify(['some', 'weird', 'error']),
@@ -91,6 +103,16 @@ describe('extractMessage', () => {
     expect(extractMessage({ omg: 'no error keys!', foo: 'bar' })).toBe(
       JSON.stringify({ omg: 'no error keys!', foo: 'bar' }),
     );
+  });
+
+  test('returns the default message when fallback stringification fails', () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const error: Record<string, unknown> = {};
+
+    error.self = error;
+
+    expect(extractMessage(error)).toBe(DEFAULT_MESSAGE);
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
   });
 
   test('can extract a message from within an object', () => {
@@ -136,6 +158,26 @@ describe('extractMessage', () => {
     expect(
       extractMessage({ message: { err: { message: 'This error message is nested deeply!' } } }),
     ).toBe('This error message is nested deeply!');
+  });
+
+  test.each([
+    'message',
+    'msg',
+    'error',
+    'err',
+    'errors',
+    'errs',
+    'reason',
+    'reasons',
+    'issue',
+    'issues',
+    'data',
+  ])('returns the default message for circular %s references', (errorKey) => {
+    const error: Record<string, unknown> = {};
+
+    error[errorKey] = error;
+
+    expect(extractMessage(error)).toBe(DEFAULT_MESSAGE);
   });
 
   test('can extract a message from ZodErrors', () => {
@@ -258,6 +300,16 @@ describe('decodeError', () => {
       code: DEFAULT_CODE,
       data: null,
     });
+    expect(decodeError('There was an error{()}')).toStrictEqual({
+      message: 'There was an error{()}',
+      code: DEFAULT_CODE,
+      data: null,
+    });
+    expect(decodeError(encodeError('There was an error.', DEFAULT_CODE))).toStrictEqual({
+      message: 'There was an error.',
+      code: DEFAULT_CODE,
+      data: null,
+    });
   });
 
   test('can decode object and Error instances that carry a code', () => {
@@ -313,6 +365,7 @@ describe('decodeError', () => {
     ['false', false],
     ['zero', 0],
     ['empty string', ''],
+    ['undefined', undefined],
   ])('can decode %s data from object errors', (_, decodedData) => {
     expect(
       decodeError({
@@ -448,9 +501,7 @@ describe('hasErrorCode', () => {
     const sourceException = new Exception('There was an error.', 'INVALID_INPUT');
     const wrappedException = new Exception(sourceException);
 
-    expect(
-      hasErrorCode(sourceException, 'INVALID_INPUT'),
-    ).toBe(true);
+    expect(hasErrorCode(sourceException, 'INVALID_INPUT')).toBe(true);
     expect(hasErrorCode(wrappedException, 'INVALID_INPUT')).toBe(true);
     expect(hasErrorCode(new Exception(encodeError('There was an error.', 100)), 100)).toBe(true);
     expect(hasErrorCode(new Exception('There was an error.'), DEFAULT_CODE)).toBe(true);

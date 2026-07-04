@@ -1,5 +1,5 @@
 // shared
-export { IErrorCode, IDecodedError, IErrorCodeCarrier } from './shared/types.js';
+export type { IErrorCode, IDecodedError, IErrorCodeCarrier } from './shared/types.js';
 export { DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
 
 // error handler

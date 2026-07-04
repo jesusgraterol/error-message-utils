@@ -11,12 +11,12 @@ import { extractZodErrorMessage, getDecodedErrorCode } from './utilities.js';
  */
 
 /**
- * Attempts to extract an error message from an error that could be anything. If it fails to do so,
- * it returns the default message.
+ * Attempts to extract an error message from an error while avoiding circular object traversal.
  * @param error The error to extract the message from.
+ * @param visitedErrors The object references already inspected in this extraction.
  * @returns A string containing the extracted message or the default message if extraction fails.
  */
-export const extractMessage = (error: any): string => {
+const __extractMessage = (error: any, visitedErrors: WeakSet<object>): string => {
   // if the error is a string, return it as is
   if (typeof error === 'string' && error.length) {
     return error;
@@ -27,11 +27,19 @@ export const extractMessage = (error: any): string => {
     return extractZodErrorMessage(error);
   }
 
+  if (error && typeof error === 'object') {
+    if (visitedErrors.has(error)) {
+      return DEFAULT_MESSAGE;
+    }
+
+    visitedErrors.add(error);
+  }
+
   // if it is an instance of an error, check if there is a cause and handle it recursively.
   // Otherwise, just return the message
   if (error instanceof Error && error.message) {
     if (error.cause) {
-      return `${error.message}; [CAUSE]: ${extractMessage(error.cause)}`;
+      return `${error.message}; [CAUSE]: ${__extractMessage(error.cause, visitedErrors)}`;
     }
     return error.message;
   }
@@ -40,37 +48,37 @@ export const extractMessage = (error: any): string => {
   // is a match. Otherwise, attempt to stringify the entire object.
   if (error && typeof error === 'object') {
     if (error.message) {
-      return extractMessage(error.message);
+      return __extractMessage(error.message, visitedErrors);
     }
     if (error.msg) {
-      return extractMessage(error.msg);
+      return __extractMessage(error.msg, visitedErrors);
     }
     if (error.error) {
-      return extractMessage(error.error);
+      return __extractMessage(error.error, visitedErrors);
     }
     if (error.err) {
-      return extractMessage(error.err);
+      return __extractMessage(error.err, visitedErrors);
     }
     if (error.errors) {
-      return extractMessage(error.errors);
+      return __extractMessage(error.errors, visitedErrors);
     }
     if (error.errs) {
-      return extractMessage(error.errs);
+      return __extractMessage(error.errs, visitedErrors);
     }
     if (error.reason) {
-      return extractMessage(error.reason);
+      return __extractMessage(error.reason, visitedErrors);
     }
     if (error.reasons) {
-      return extractMessage(error.reasons);
+      return __extractMessage(error.reasons, visitedErrors);
     }
     if (error.issue) {
-      return extractMessage(error.issue);
+      return __extractMessage(error.issue, visitedErrors);
     }
     if (error.issues) {
-      return extractMessage(error.issues);
+      return __extractMessage(error.issues, visitedErrors);
     }
     if (error.data) {
-      return extractMessage(error.data);
+      return __extractMessage(error.data, visitedErrors);
     }
     try {
       return JSON.stringify(error);
@@ -84,6 +92,14 @@ export const extractMessage = (error: any): string => {
   // if none could be extracted, return the default
   return DEFAULT_MESSAGE;
 };
+
+/**
+ * Attempts to extract an error message from an error that could be anything. If it fails to do so,
+ * it returns the default message.
+ * @param error The error to extract the message from.
+ * @returns A string containing the extracted message or the default message if extraction fails.
+ */
+export const extractMessage = (error: any): string => __extractMessage(error, new WeakSet());
 
 /**
  * Encoding / Decoding
