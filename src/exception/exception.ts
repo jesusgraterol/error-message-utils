@@ -1,22 +1,28 @@
 import { type IErrorCode } from '../shared/types.js';
 import { decodeError, encodeError } from '../error-handler/index.js';
-import { IExceptionRecord } from './types.js';
+import { type IExceptionRecord } from './types.js';
 
+/**
+ * Error subclass that normalizes unknown errors into a message, code, and optional data payload.
+ */
 export class Exception extends Error {
-  // the code of the error
+  // stable code callers can use for programmatic error handling
   public readonly code: IErrorCode;
 
-  // any additional data that should be attached to the exception for further context
+  // optional context attached to the exception
   public readonly data: unknown;
 
+  /**
+   * Creates an exception from any supported error input.
+   * @param error The unknown error or message to normalize.
+   * @param code The optional code that overrides any decoded code.
+   * @param data The optional data payload that overrides any decoded data.
+   */
   constructor(error: unknown, code?: IErrorCode, data?: unknown) {
-    // decode the error to extract the message and the code (if any)
     const decodedError = decodeError(error);
 
-    // call the super constructor with the decoded message
     super(decodedError.message);
 
-    // init props
     this.name = 'Exception';
     this.code = code ?? decodedError.code;
     this.data = data === undefined ? decodedError.data : data;
