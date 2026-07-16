@@ -1,5 +1,5 @@
 import { afterEach, describe, jest, test, expect } from '@jest/globals';
-import { z } from 'zod';
+import { z, type ZodType } from 'zod';
 import { Exception } from '../exception/index.js';
 import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { wrapCode } from '../utils/index.js';
@@ -206,6 +206,39 @@ describe('extractMessage', () => {
       expect(extractMessage(error)).toBe(
         'Invalid input: expected string, received number (someDict.innerList.0.someProp)',
       );
+    }
+  });
+
+  test.each<[string, ZodType, unknown, string]>([
+    [
+      'an invalid field type',
+      z.object({ name: z.string({ error: 'Name must be a string.' }) }),
+      { name: 123 },
+      'Name must be a string. (name)',
+    ],
+    [
+      'a failed field constraint',
+      z.object({ name: z.string().min(1, { error: 'Name is required.' }) }),
+      { name: '' },
+      'Name is required. (name)',
+    ],
+    [
+      'a failed nested refinement',
+      z.object({
+        profile: z.object({
+          age: z.number().refine((age) => age >= 18, { error: 'Age must be at least 18.' }),
+        }),
+      }),
+      { profile: { age: 17 } },
+      'Age must be at least 18. (profile.age)',
+    ],
+  ])('can extract a custom Zod schema message for %s', (_, schema, input, expectedMessage) => {
+    const result = schema.safeParse(input);
+
+    expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(extractMessage(result.error)).toBe(expectedMessage);
     }
   });
 });
