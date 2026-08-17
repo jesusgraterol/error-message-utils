@@ -157,6 +157,19 @@ hasErrorCode(exception, 'ACCESS_DENIED'); // true
 hasErrorCode(exception, 'PAYMENT_FAILED'); // false
 ```
 
+Use `hasErrorCodePrefix` when related string codes share a prefix. Empty prefixes and numeric codes
+do not match.
+
+```typescript
+import { Exception, hasErrorCodePrefix } from 'error-message-utils';
+
+const exception = new Exception('User not found', 'USER_NOT_FOUND');
+
+hasErrorCodePrefix(exception, 'USER_'); // true
+hasErrorCodePrefix('USER_NOT_FOUND', 'USER_'); // true
+hasErrorCodePrefix(exception, 'PAYMENT_'); // false
+```
+
 ### Encode and Decode Plain Strings
 
 `encodeError` and `decodeError` are lower-level helpers for systems that can only pass string
@@ -221,6 +234,7 @@ import {
   extractMessage,
   getErrorCode,
   hasErrorCode,
+  hasErrorCodePrefix,
   isDefaultErrorMessage,
   isEncodedError,
   type IDecodedError,
@@ -246,6 +260,7 @@ import {
 | `isEncodedError` | `(error: unknown) => boolean` | Returns `true` when `decodeError(error).code` resolves to a non-default code. |
 | `getErrorCode` | `(error: unknown) => IErrorCode \| null` | Returns the resolved non-default code, or `null` when no non-default code is found. |
 | `hasErrorCode` | `(error: unknown, code: IErrorCode) => boolean` | Checks whether an error resolves to the provided code. Raw code values are compared with strict equality. |
+| `hasErrorCodePrefix` | `(error: unknown, prefix: string) => boolean` | Checks whether an error resolves to a string code that starts with the provided non-empty prefix. Raw string codes are supported; numeric codes do not match. |
 | `isDefaultErrorMessage` | `(value: string, fullMatch?: boolean) => boolean` | Checks whether a string contains `DEFAULT_MESSAGE`. Pass `true` as the second argument to require an exact match. |
 
 ### Types
@@ -274,7 +289,7 @@ type IExceptionRecord = {
 | --- | --- |
 | `IErrorCode` | The supported type for application error codes. |
 | `IDecodedError` | The object returned by `decodeError`. |
-| `IErrorCodeCarrier` | A plain object shape that can provide a code to `decodeError`, `getErrorCode`, `hasErrorCode`, and `Exception`. |
+| `IErrorCodeCarrier` | A plain object shape that can provide a code to `decodeError`, `getErrorCode`, `hasErrorCode`, `hasErrorCodePrefix`, and `Exception`. |
 | `IExceptionRecord` | The serializable object returned by `Exception.toRecord()`. |
 
 ### Constants

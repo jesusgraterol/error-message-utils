@@ -10,6 +10,7 @@ import {
   decodeError,
   isEncodedError,
   getErrorCode,
+  hasErrorCodePrefix,
   hasErrorCode,
 } from './index.js';
 
@@ -539,6 +540,48 @@ describe('getErrorCode', () => {
     expect(getErrorCode({ code: null, message: 'There was an error.' })).toBeNull();
     expect(getErrorCode(encodeError('There was an error.', DEFAULT_CODE))).toBeNull();
     expect(getErrorCode(new Exception('There was an error.'))).toBeNull();
+  });
+});
+
+describe('hasErrorCodePrefix', () => {
+  test('matches raw string codes using case-sensitive prefix comparison', () => {
+    expect(hasErrorCodePrefix('INVALID_INPUT', 'INVALID_')).toBe(true);
+    expect(hasErrorCodePrefix('INVALID_INPUT', 'INVALID_INPUT')).toBe(true);
+    expect(hasErrorCodePrefix('INVALID_INPUT', 'invalid_')).toBe(false);
+    expect(hasErrorCodePrefix('INVALID_INPUT', 'OTHER_')).toBe(false);
+  });
+
+  test('matches object-carried string codes', () => {
+    expect(hasErrorCodePrefix({ code: 'INVALID_INPUT' }, 'INVALID_')).toBe(true);
+    expect(hasErrorCodePrefix({ code: 'OTHER_CODE' }, 'INVALID_')).toBe(false);
+  });
+
+  test('matches encoded errors from supported error shapes', () => {
+    const encodedErrorMessage = encodeError('There was an error.', 'INVALID_INPUT');
+
+    expect(hasErrorCodePrefix(encodedErrorMessage, 'INVALID_')).toBe(true);
+    expect(hasErrorCodePrefix(new Error(encodedErrorMessage), 'INVALID_')).toBe(true);
+    expect(hasErrorCodePrefix({ message: encodedErrorMessage }, 'INVALID_')).toBe(true);
+    expect(hasErrorCodePrefix({ error: encodedErrorMessage }, 'INVALID_')).toBe(true);
+  });
+
+  test('matches Exception instances by their resolved string code', () => {
+    const sourceException = new Exception('There was an error.', 'INVALID_INPUT');
+    const wrappedException = new Exception(sourceException);
+
+    expect(hasErrorCodePrefix(sourceException, 'INVALID_')).toBe(true);
+    expect(hasErrorCodePrefix(wrappedException, 'INVALID_')).toBe(true);
+  });
+
+  test('does not match empty prefixes, numeric codes, or unresolved errors', () => {
+    expect(hasErrorCodePrefix('INVALID_INPUT', '')).toBe(false);
+    expect(hasErrorCodePrefix(100, '1')).toBe(false);
+    expect(hasErrorCodePrefix({ code: 100 }, '1')).toBe(false);
+    expect(hasErrorCodePrefix(encodeError('There was an error.', 100), '1')).toBe(false);
+    expect(hasErrorCodePrefix(null, 'INVALID_')).toBe(false);
+    expect(hasErrorCodePrefix(undefined, 'INVALID_')).toBe(false);
+    expect(hasErrorCodePrefix({}, 'INVALID_')).toBe(false);
+    expect(hasErrorCodePrefix(new Error('There was an error.'), 'INVALID_')).toBe(false);
   });
 });
 

@@ -152,6 +152,22 @@ export const getErrorCode = (error: any): IErrorCode | null => {
 };
 
 /**
+ * Checks if the given error has a string code that starts with the specified prefix.
+ * @param error The error to be checked, can be of any type.
+ * @param prefix The non-empty prefix to check against.
+ * @returns A boolean indicating whether the error code starts with the specified prefix.
+ */
+export const hasErrorCodePrefix = (error: unknown, prefix: string): boolean => {
+  if (prefix.length === 0) {
+    return false;
+  }
+
+  const code = getErrorCode(error) ?? error;
+
+  return typeof code === 'string' && code.startsWith(prefix);
+};
+
+/**
  * Checks if the given error matches the specified error code.
  * @param error The error to be checked, can be of any type.
  * @param code The error code to check against.
