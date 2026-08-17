@@ -9,6 +9,7 @@ export {
   decodeError,
   isEncodedError,
   getErrorCode,
+  hasErrorCodePrefix,
   hasErrorCode,
   isDefaultErrorMessage,
 } from './error-handler/index.js';
