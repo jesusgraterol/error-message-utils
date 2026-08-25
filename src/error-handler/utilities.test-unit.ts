@@ -3,7 +3,7 @@ import { z, ZodError, type ZodType } from 'zod';
 
 import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { Exception } from '../exception/index.js';
-import { extractZodErrorMessage, getDecodedErrorCode } from './utilities.js';
+import { extractZodErrorMessage, getDecodedErrorCode, redactSensitiveValues } from './utilities.js';
 
 /* ************************************************************************************************
  *                                             HELPERS                                            *
@@ -28,6 +28,56 @@ const getZodError = (schema: ZodType, input: unknown): ZodError => {
 /* ************************************************************************************************
  *                                             TESTS                                              *
  ************************************************************************************************ */
+
+describe('redactSensitiveValues', () => {
+  test('redacts every literal occurrence of a sensitive value', () => {
+    const sensitiveValue = '.*+?^${}()|[]\\';
+
+    expect(
+      redactSensitiveValues(`Before ${sensitiveValue}, between ${sensitiveValue}, and after.`, [
+        sensitiveValue,
+      ]),
+    ).toBe('Before [redacted], between [redacted], and after.');
+  });
+
+  test('deduplicates values and merges contained occurrences', () => {
+    const sensitiveValues = ['secret', 'secret-token', 'secret-token'];
+
+    expect(redactSensitiveValues('secret-token and secret-token', sensitiveValues)).toBe(
+      '[redacted] and [redacted]',
+    );
+    expect(sensitiveValues).toStrictEqual(['secret', 'secret-token', 'secret-token']);
+  });
+
+  test.each([
+    ['shifted values in forward order', 'abcd', ['abc', 'bcd']],
+    ['shifted values in reverse order', 'abcd', ['bcd', 'abc']],
+    ['shifted values with different lengths', 'abcde', ['abcd', 'bcde']],
+    ['overlapping occurrences of the same value', 'aaa', ['aa']],
+  ])('redactSensitiveValues(%s) -> one marker', (_, message, sensitiveValues) => {
+    expect(redactSensitiveValues(message, sensitiveValues)).toBe('[redacted]');
+  });
+
+  test('keeps markers separate for adjacent non-overlapping values', () => {
+    expect(redactSensitiveValues('abcdef', ['abc', 'def'])).toBe('[redacted][redacted]');
+  });
+
+  test.each([
+    ['an empty list', []],
+    ['an empty-string-only list', ['', '']],
+    ['a non-matching list', ['different-value']],
+  ])('returns the unchanged message for %s', (_, sensitiveValues) => {
+    expect(redactSensitiveValues('Request failed.', sensitiveValues)).toBe('Request failed.');
+  });
+
+  test('matches sensitive values case-sensitively', () => {
+    expect(redactSensitiveValues('Token token TOKEN', ['token'])).toBe('Token [redacted] TOKEN');
+  });
+
+  test('does not process an inserted redaction marker again', () => {
+    expect(redactSensitiveValues('secret', ['secret', 'redacted'])).toBe('[redacted]');
+  });
+});
 
 describe('extractZodErrorMessage', () => {
   test('can extract the first issue message and path from a ZodError', () => {

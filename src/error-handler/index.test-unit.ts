@@ -5,6 +5,7 @@ import { CODE_WRAPPER, DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants
 import { wrapCode } from '../utils/index.js';
 import {
   extractMessage,
+  extractRedactedMessage,
   isDefaultErrorMessage,
   encodeError,
   decodeError,
@@ -114,7 +115,7 @@ describe('extractMessage', () => {
     error.self = error;
 
     expect(extractMessage(error)).toBe(DEFAULT_MESSAGE);
-    expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   test('can extract a message from within an object', () => {
@@ -241,6 +242,34 @@ describe('extractMessage', () => {
     if (!result.success) {
       expect(extractMessage(result.error)).toBe(expectedMessage);
     }
+  });
+});
+
+describe('extractRedactedMessage', () => {
+  test('extracts and redacts repeated sensitive values from an Error cause chain', () => {
+    const error = new Error('Request failed for token secret-token.', {
+      cause: new Error('The provider rejected secret-token.'),
+    });
+
+    expect(extractRedactedMessage(error, ['secret-token'])).toBe(
+      'Request failed for token [redacted].; [CAUSE]: The provider rejected [redacted].',
+    );
+  });
+
+  test('fully redacts shifted overlapping sensitive values', () => {
+    expect(extractRedactedMessage(new Error('Provider returned abcd.'), ['abc', 'bcd'])).toBe(
+      'Provider returned [redacted].',
+    );
+  });
+
+  test.each([
+    ['an empty list', []],
+    ['an empty-string-only list', ['', '']],
+    ['a non-matching list', ['different-value']],
+  ])('returns the extracted message unchanged for %s', (_, sensitiveValues) => {
+    const error = new Error('Request failed.');
+
+    expect(extractRedactedMessage(error, sensitiveValues)).toBe(extractMessage(error));
   });
 });
 

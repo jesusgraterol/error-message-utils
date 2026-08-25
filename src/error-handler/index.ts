@@ -1,10 +1,9 @@
-/* eslint-disable no-console */
 import { ZodError } from 'zod';
 
 import type { IErrorCode, IDecodedError } from '../shared/types.js';
 import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { wrapCode, unwrapCode } from '../utils/index.js';
-import { extractZodErrorMessage, getDecodedErrorCode } from './utilities.js';
+import { extractZodErrorMessage, getDecodedErrorCode, redactSensitiveValues } from './utilities.js';
 
 /**
  * General errors
@@ -82,10 +81,8 @@ const __extractMessage = (error: any, visitedErrors: WeakSet<object>): string =>
     }
     try {
       return JSON.stringify(error);
-    } catch (e) {
-      console.error('Error during extractMessage:');
-      console.error('Original Error: ', error);
-      console.error('JSON.stringify Error:', e);
+    } catch {
+      return DEFAULT_MESSAGE;
     }
   }
 
@@ -100,6 +97,15 @@ const __extractMessage = (error: any, visitedErrors: WeakSet<object>): string =>
  * @returns A string containing the extracted message or the default message if extraction fails.
  */
 export const extractMessage = (error: any): string => __extractMessage(error, new WeakSet());
+
+/**
+ * Extracts an error message and replaces exact sensitive values with a redaction marker.
+ * @param error The error to extract the message from.
+ * @param sensitiveValues The exact case-sensitive values to redact.
+ * @returns The extracted message with matching sensitive values redacted.
+ */
+export const extractRedactedMessage = (error: unknown, sensitiveValues: string[]): string =>
+  redactSensitiveValues(extractMessage(error), sensitiveValues);
 
 /**
  * Encoding / Decoding
