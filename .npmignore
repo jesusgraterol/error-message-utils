@@ -1,4 +1,6 @@
 /.github
+/coding-agent-planning
+/coverage
 /src
 .eslintrc.json
 .gitignore

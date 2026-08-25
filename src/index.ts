@@ -5,6 +5,7 @@ export { DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
 // error handler
 export {
   extractMessage,
+  extractRedactedMessage,
   encodeError,
   decodeError,
   isEncodedError,

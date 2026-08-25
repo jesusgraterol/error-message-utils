@@ -133,6 +133,29 @@ if (!result.success) {
 }
 ```
 
+### Redact Sensitive Values
+
+`extractRedactedMessage` extracts a message using the same rules as `extractMessage`, then replaces
+every exact sensitive value with `[redacted]`.
+
+```typescript
+import { extractRedactedMessage } from 'error-message-utils';
+
+const error = new Error('Request failed for token abc123.', {
+  cause: new Error('The provider rejected abc123.'),
+});
+
+extractRedactedMessage(error, ['abc123']);
+// 'Request failed for token [redacted].; [CAUSE]: The provider rejected [redacted].'
+
+extractRedactedMessage(error, ['different-value']);
+// 'Request failed for token abc123.; [CAUSE]: The provider rejected abc123.'
+```
+
+Matching is literal and case-sensitive. Empty values are ignored. The function does not
+automatically identify secrets, so transformed or encoded versions must be supplied separately if
+they also need redaction.
+
 ### Get an Error Code
 
 Use `getErrorCode` when you only need the resolved code.
@@ -232,6 +255,7 @@ import {
   decodeError,
   encodeError,
   extractMessage,
+  extractRedactedMessage,
   getErrorCode,
   hasErrorCode,
   hasErrorCodePrefix,
@@ -255,6 +279,7 @@ import {
 | Export | Signature | Description |
 | --- | --- | --- |
 | `extractMessage` | `(error: unknown) => string` | Extracts the best readable message from strings, `Error` instances, nested error-like objects, `Error.cause` chains, arrays, plain objects, and Zod errors. Returns `DEFAULT_MESSAGE` when no useful message can be extracted. |
+| `extractRedactedMessage` | `(error: unknown, sensitiveValues: readonly string[]) => string` | Extracts a message and replaces every exact, case-sensitive occurrence of each non-empty sensitive value with `[redacted]`. Returns the extracted message unchanged when no value matches. |
 | `encodeError` | `(error: unknown, code: IErrorCode) => string` | Extracts a message from `error` and appends the wrapped code at the end of the message. |
 | `decodeError` | `(error: unknown) => IDecodedError` | Extracts a message, resolves a code from an encoded message or code-carrying object, and returns `{ message, code, data }`. |
 | `isEncodedError` | `(error: unknown) => boolean` | Returns `true` when `decodeError(error).code` resolves to a non-default code. |
