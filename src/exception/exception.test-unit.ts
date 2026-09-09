@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 
-import { encodeError } from '../error-handler/index.js';
+import { encodeError, extractMessage } from '../error-handler/index.js';
 import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
 import { Exception } from './exception.js';
 
@@ -86,6 +86,7 @@ describe('Exception', () => {
     expect(exception.name).toBe('Exception');
     expect(exception.message).toBe('request failed');
     expect(exception.code).toBe('OPENAI_REQUEST_FAILED');
+    expect(exception.cause).toBeUndefined();
   });
 
   test('extracts the message from non-Error values', () => {
@@ -221,11 +222,7 @@ describe('Exception', () => {
     const constructorExceptionData = {
       requestId: 'constructor-request',
     };
-    const sourceException = new Exception(
-      'request failed',
-      'REQUEST_FAILED',
-      decodedExceptionData,
-    );
+    const sourceException = new Exception('request failed', 'REQUEST_FAILED', decodedExceptionData);
     const exception = new Exception(sourceException, undefined, constructorExceptionData);
 
     expect(exception.message).toBe('request failed');
@@ -325,6 +322,65 @@ describe('Exception', () => {
     expect(exception.toString()).toBe(
       encodeError('request failed; [CAUSE]: provider request failed', 'REQUEST_FAILED'),
     );
+  });
+
+  test('preserves a provided cause using native error options', () => {
+    const cause = new Error('network timeout');
+    const exceptionData = {
+      operation: 'sendReceiptEmail',
+    };
+    const exception = new Exception(
+      'Unable to send the receipt email.',
+      'RECEIPT_EMAIL_FAILED',
+      exceptionData,
+      { cause },
+    );
+
+    expect(exception.message).toBe('Unable to send the receipt email.');
+    expect(exception.code).toBe('RECEIPT_EMAIL_FAILED');
+    expect(exception.data).toStrictEqual(exceptionData);
+    expect(exception.cause).toBe(cause);
+    expect(extractMessage(exception)).toBe(
+      'Unable to send the receipt email.; [CAUSE]: network timeout',
+    );
+    expect(exception.toString()).toBe(
+      encodeError('Unable to send the receipt email.', 'RECEIPT_EMAIL_FAILED'),
+    );
+    expect(exception.toRecord()).toStrictEqual({
+      message: 'Unable to send the receipt email.',
+      code: 'RECEIPT_EMAIL_FAILED',
+      data: exceptionData,
+    });
+  });
+
+  test('preserves decoded code and data when error options are provided', () => {
+    const decodedExceptionData = {
+      requestId: 'request-1',
+    };
+    const sourceException = new Exception(
+      'provider request failed',
+      'PROVIDER_REQUEST_FAILED',
+      decodedExceptionData,
+    );
+    const cause = new Error('network timeout');
+    const exception = new Exception(sourceException, undefined, undefined, { cause });
+
+    expect(exception.message).toBe('provider request failed');
+    expect(exception.code).toBe('PROVIDER_REQUEST_FAILED');
+    expect(exception.data).toStrictEqual(decodedExceptionData);
+    expect(exception.cause).toBe(cause);
+  });
+
+  test.each([
+    ['false', false],
+    ['zero', 0],
+    ['empty string', ''],
+    ['null', null],
+  ])('preserves %s as cause without appending it to the extracted message', (_, cause) => {
+    const exception = new Exception('feature disabled', 'FEATURE_DISABLED', undefined, { cause });
+
+    expect(exception.cause).toBe(cause);
+    expect(extractMessage(exception)).toBe('feature disabled');
   });
 
   test('can init message and code from an error message', () => {

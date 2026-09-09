@@ -1,9 +1,9 @@
-import { type IErrorCode } from '../shared/types.js';
+import type { IErrorCode } from '../shared/types.js';
 import { decodeError, encodeError } from '../error-handler/index.js';
-import { type IExceptionRecord } from './types.js';
+import type { IErrorOptions, IExceptionRecord } from './types.js';
 
 /**
- * Error subclass that normalizes unknown errors into a message, code, and optional data payload.
+ * Error subclass that normalizes unknown errors and supports native error options.
  */
 export class Exception extends Error {
   // stable code callers can use for programmatic error handling
@@ -17,11 +17,12 @@ export class Exception extends Error {
    * @param error The unknown error or message to normalize.
    * @param code The optional code that overrides any decoded code.
    * @param data The optional data payload that overrides any decoded data.
+   * @param options The native error options, including an optional cause.
    */
-  constructor(error: unknown, code?: IErrorCode, data?: unknown) {
+  constructor(error: unknown, code?: IErrorCode, data?: unknown, options?: IErrorOptions) {
     const decodedError = decodeError(error);
 
-    super(decodedError.message);
+    super(decodedError.message, options);
 
     this.name = 'Exception';
     this.code = code ?? decodedError.code;
