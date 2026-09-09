@@ -16,4 +16,4 @@ export {
 } from './error-handler/index.js';
 
 // exception
-export { type IExceptionRecord, Exception } from './exception/index.js';
+export { type IErrorOptions, type IExceptionRecord, Exception } from './exception/index.js';

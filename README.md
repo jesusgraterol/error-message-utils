@@ -6,6 +6,7 @@ consistent shape:
 - a readable message
 - a stable error code
 - optional extra data
+- an optional native error cause
 
 Use `Exception` for most application code. Use `encodeError` and `decodeError` when you need to
 send or receive an error code inside a plain string.
@@ -18,7 +19,8 @@ npm i -S error-message-utils
 
 ## Recommended Usage: Exception
 
-`Exception` is an `Error` subclass that stores a normalized message, a code, and optional data.
+`Exception` is an `Error` subclass that stores a normalized message, a code, optional data, and an
+optional native cause.
 
 ```typescript
 import { Exception } from 'error-message-utils';
@@ -37,6 +39,7 @@ exception.name; // 'Exception'
 exception.message; // 'Request failed'
 exception.code; // 'REQUEST_FAILED'
 exception.data; // null
+exception.cause; // undefined
 exception.toString(); // 'Request failed{(REQUEST_FAILED)}'
 exception.toRecord();
 // {
@@ -46,29 +49,51 @@ exception.toRecord();
 // }
 ```
 
-### Wrap Unknown Errors
+### Preserve an Error Cause
 
-When you catch an unknown error, pass it to `Exception`. The package will extract the best message
-and code it can find.
+When wrapping an error, provide a stable contextual message and pass the original value through the
+fourth `IErrorOptions` argument. This keeps the top-level message predictable while preserving the
+original error for debugging.
 
 ```typescript
-import { Exception } from 'error-message-utils';
+import { Exception, extractMessage } from 'error-message-utils';
 
 try {
   await sendReceiptEmail();
-} catch (error) {
-  throw new Exception(error, 'RECEIPT_EMAIL_FAILED', {
-    operation: 'sendReceiptEmail',
-  });
+} catch (cause) {
+  const exception = new Exception(
+    'Unable to send the receipt email.',
+    'RECEIPT_EMAIL_FAILED',
+    { operation: 'sendReceiptEmail' },
+    { cause },
+  );
+
+  exception.message; // 'Unable to send the receipt email.'
+  exception.cause === cause; // true
+  extractMessage(exception); // combines the message with a truthy cause chain
+
+  throw exception;
 }
 ```
+
+`IErrorOptions` is a direct alias of the native `ErrorOptions` type. This API requires the ES2022
+TypeScript `lib` and a runtime that supports `Error` causes.
+
+The existing `new Exception(error, code, data)` form remains supported. It normalizes the first
+argument into the exception message but does not infer or store that argument as `cause`. Avoid
+also appending the cause message to the top-level message because `extractMessage` already combines
+truthy cause chains. Native `Error` semantics still retain falsy causes such as `false`, `0`, an
+empty string, or `null`, but `extractMessage` does not append them.
+
+`toString()` and `toRecord()` intentionally omit `cause`. A cause can contain internal or sensitive
+details, so inspect or expose it only at an appropriate boundary.
 
 ### Extend Exception
 
 Create small domain-specific exception classes when your app has a stable set of error codes.
 
 ```typescript
-import { Exception } from 'error-message-utils';
+import { Exception, type IErrorOptions } from 'error-message-utils';
 
 const USER_ERROR_CODES = {
   EmailTaken: 'USER_EMAIL_TAKEN',
@@ -78,8 +103,13 @@ const USER_ERROR_CODES = {
 type IUserErrorCode = (typeof USER_ERROR_CODES)[keyof typeof USER_ERROR_CODES];
 
 export class UserException extends Exception {
-  public constructor(message: string, code: IUserErrorCode, data?: unknown) {
-    super(message, code, data);
+  public constructor(
+    message: string,
+    code: IUserErrorCode,
+    data?: unknown,
+    options?: IErrorOptions,
+  ) {
+    super(message, code, data, options);
     this.name = 'UserException';
   }
 }
@@ -264,6 +294,7 @@ import {
   type IDecodedError,
   type IErrorCode,
   type IErrorCodeCarrier,
+  type IErrorOptions,
   type IExceptionRecord,
 } from 'error-message-utils';
 ```
@@ -272,7 +303,7 @@ import {
 
 | Export | Description |
 | --- | --- |
-| `Exception` | An `Error` subclass that normalizes an unknown error into `message`, `code`, and `data`. It can also serialize itself with `toString()` or `toRecord()`. |
+| `Exception` | An `Error` subclass that normalizes an unknown error into `message`, `code`, and `data`, and accepts native error options such as `cause`. It can also serialize itself with `toString()` or `toRecord()`, which omit the cause. |
 
 ### Functions
 
@@ -292,6 +323,8 @@ import {
 
 ```typescript
 type IErrorCode = string | number;
+
+type IErrorOptions = ErrorOptions;
 
 type IDecodedError = {
   message: string;
@@ -313,9 +346,10 @@ type IExceptionRecord = {
 | Export | Description |
 | --- | --- |
 | `IErrorCode` | The supported type for application error codes. |
+| `IErrorOptions` | A direct alias of the native `ErrorOptions` type accepted by the `Exception` constructor. |
 | `IDecodedError` | The object returned by `decodeError`. |
 | `IErrorCodeCarrier` | A plain object shape that can provide a code to `decodeError`, `getErrorCode`, `hasErrorCode`, `hasErrorCodePrefix`, and `Exception`. |
-| `IExceptionRecord` | The serializable object returned by `Exception.toRecord()`. |
+| `IExceptionRecord` | The serializable object returned by `Exception.toRecord()`. It does not include `cause`. |
 
 ### Constants
 
